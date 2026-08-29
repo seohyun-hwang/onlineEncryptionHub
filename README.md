@@ -9,7 +9,7 @@ Ports: http://localhost8080/ for backend; http://localhost:5173/ for frontend.
 
 ## Basic project information
 
-This project was done for self-study on cryptographic algorithms, SpringBoot, Rest API, database interaction, unit-test writing, and UI/UX integration.
+This project was done for self-study on cryptographic algorithms, SpringBoot, Rest API, database interaction, unit-test writing, ReactJS frontend, and UI/UX integration.
 
 The application asks you to create an account with a username and password, after which it lets you store encrypted text-entries in a database (which is cleared as soon as the backend program is terminated).
 
