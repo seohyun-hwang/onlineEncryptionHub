@@ -1,0 +1,37 @@
+package com.example.encryptMsg.model;
+
+import jakarta.persistence.*;
+
+@Entity
+public class Message {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int messageId;
+    @ManyToOne
+    @JoinColumn(name = "account_id")
+    private Account account; // the account that sent this message
+    @Lob
+    @Column(columnDefinition = "BLOB") // or whatever makes sense for your intended message size
+    private byte[] messageCiphertext; // [AES, masterKey: password] for storage
+    private byte[] initializationVector; // AES-CBC
+
+    public Message() {
+    }
+    public Message(Account account, byte[] messageCiphertext, byte[] iv)
+    {
+        this.account = account;
+        this.messageCiphertext = messageCiphertext;
+        this.initializationVector = iv;
+    }
+
+
+    // GETTERS
+    public int getMessageId() { return messageId; }
+    public Account getAccount() {
+        return account;
+    }
+    public byte[] getMessageCiphertext() { return messageCiphertext; }
+    public byte[] getInitializationVector() { return initializationVector; }
+
+}
