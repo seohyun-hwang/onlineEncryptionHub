@@ -1,5 +1,5 @@
 ## Running the project
-The backend and frontend must be run simultaneously. The project files include both the frontend and backend.
+This is a fullstack application; the backend and frontend must be run simultaneously. The project files include both the frontend and backend.
 
 Backend: run `src/main/java/com.example.encryptMsg/EncryptMsgApplication.java`.
 
