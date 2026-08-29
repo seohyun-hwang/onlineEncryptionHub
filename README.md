@@ -9,7 +9,7 @@ Ports: http://localhost:8080/ for backend; http://localhost:5173/ for frontend.
 
 ## Basic project information
 
-This project was done for self-study on cryptographic algorithms, SpringBoot, Rest API, database interaction, unit-test writing, ReactJS frontend, and UI/UX integration.
+This project was done for self-study on cryptographic algorithms, bitwise operations, finite-field arithmetic, SpringBoot, Rest API, database interaction, unit-test writing, and UI/UX integration with ReactJS frontend.
 
 The application asks you to create an account with a username and password, after which it lets you store encrypted text-entries in a database (which is cleared as soon as the backend program is terminated).
 
@@ -18,14 +18,14 @@ Features:
 2. Delete account 
 3. Create message
 4. Delete message 
-5. Fetch all messages after account login
+5. Fetch all messages upon login
 
 Your text-entries are encrypted using Rijndael AES-256 cryptography with Cipher Block Chaining.
 Your password is encrypted using a one-way SHA-256 algorithm.
 Passwords are salted and stretched using abridged PBKDF2 (iteration count 600,000).
 
 
-My core cryptographic algorithms (PBKDF2, SHA-256, AES-256, CBC mode) are ***fully custom-rolled*** and use no libaries.
+My core cryptographic algorithms (PBKDF2, SHA-256, AES-256, CBC mode) are ***fully custom-rolled*** with no use of cipher libraries.
 While custom-rolled cryptography is unprofessional and highly vulnerable to side-channel attacks, I believed it to be worth the practice. The code for all my cryptography is found in `src/main/java/service/EncryptionService.java`.
 
 Because this project is an exclusively server-side application, I refrained from Message Authentication measures (such as AES-GCM and HMAC) which would have added significant security to the application but cannot be implemented on the Application layer without dedicated client-side software.
