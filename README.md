@@ -45,3 +45,8 @@ Key plugins: Eirslett Frontend Maven 1.15.1, Maven Resources node 20.11.0 npm 10
 
 ### Frontend development tools
 TypeScript 6.0.2, React 19.2.8, Vite 8.2.2
+
+### NIST documentation
+FIPS 197 (AES): https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf
+
+FIPS PUB 180-4 (SHA): https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
