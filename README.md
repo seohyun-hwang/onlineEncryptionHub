@@ -20,7 +20,9 @@ Your password is stored in ciphertext after being passed through a one-way SHA-2
 
 
 My core cryptographic algorithms (PBKDF2, SHA-256, AES-256, CBC mode) are ***fully custom-rolled*** and use no libaries.
-While custom-rolled cryptography is unprofessional and highly vulnerable, I believed it to be worth the practice. The code for all my cryptography is found in `src/main/java/service/EncryptionService.java`.
+While custom-rolled cryptography is unprofessional and highly vulnerable to side-channel attacks, I believed it to be worth the practice. The code for all my cryptography is found in `src/main/java/service/EncryptionService.java`.
+
+Because this project is an exclusively server-side application, I refrained from Message Authentication measures (such as AES-GCM and HMAC) which would have added significant security to the application but cannot be implemented on the Application layer without dedicated client-side software.
 
 The high-level implementation of these cryptographic algorithms in `src/main/java/service/userService` use a little help, as seen by 1. the import `java.security.SecureRandom` and 2. the method call `java.security.MessageDigest.isEqual()`.
 
