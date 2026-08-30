@@ -21,7 +21,7 @@ Features:
 5. Show all messages upon login (AES-256 message decryption)
 
 Your text-entries are encrypted using Rijndael AES-256 cryptography with Cipher Block Chaining.
-Your password is encrypted using a one-way SHA-256 algorithm.
+Your password is encrypted using a one-way SHA-256 hashing algorithm.
 Passwords are salted and stretched using abridged PBKDF2 (iteration count 600,000).
 
 
@@ -30,7 +30,7 @@ While custom-rolled cryptography is unprofessional and highly vulnerable to side
 
 This project is exclusively server-side, so I refrained from Message Authentication measures (such as AES-GCM and HMAC) which would have added significant security to the application but cannot be implemented on the Application layer without dedicated client-side software.
 
-The high-level method-calling of these cryptographic algorithms in `src/main/java/service/userService` uses a little help, as seen by 1. the import `java.security.SecureRandom` for more-secure pseudorandom number generation and 2. the method call `java.security.MessageDigest.isEqual()` for constant-time array comparison.
+The high-level method-calling of these cryptographic algorithms in `src/main/java/service/UserService.java` uses a little help, as seen by 1. the import `java.security.SecureRandom` for more-secure pseudorandom number generation of salts and 2. the method call `java.security.MessageDigest.isEqual()` for constant-time array comparison of hashed values.
 
 All Rest API communication to the frontend is found in `src/main/java/controller/UserController.java`.
 

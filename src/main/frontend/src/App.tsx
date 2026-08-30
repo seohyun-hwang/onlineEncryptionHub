@@ -247,7 +247,7 @@ function FetchMessages() {
   const [messages, setMessages] = useState<Record<number, string>>({});
 
   /*
-  I don't want to use status.msg useEffect for FetchMessages
+  I don't want to use a display timer for FetchMessages.
 
   useEffect(() => {
     if (status.msg) {
