@@ -6,11 +6,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
-
+    // CORS: Cross-Origin Resource Sharing
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**") // Apply to all your API endpoints
-                // Allow both Create-React-App (3000) and Vite (5173) default ports
+        registry.addMapping("/api/**")
+                // Port 3000: Create-React-App default
+                // Port 5173: Vite default
                 .allowedOrigins("http://localhost:3000", "http://localhost:5173")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
