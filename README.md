@@ -22,7 +22,7 @@ Features:
 
 Your text-entries are encrypted using Rijndael AES-256 cryptography with Cipher Block Chaining.
 Your password is encrypted using a one-way SHA-256 hashing algorithm.
-Passwords are salted and stretched using abridged PBKDF2 (iteration count 600,000).
+Passwords are salted and stretched using abridged PBKDF2 (uses SHA instead of HMAC-SHA; explained two paragraphs down).
 
 
 My core cryptographic algorithms (PBKDF2, SHA-256, AES-256, CBC mode) are ***fully custom-rolled*** with no use of cipher libraries.

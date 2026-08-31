@@ -45,6 +45,11 @@ public class EncryptionService {
             0xa0,0xe0,0x3b,0x4d,0xae,0x2a,0xf5,0xb0,0xc8,0xeb,0xbb,0x3c,0x83,0x53,0x99,0x61,
             0x17,0x2b,0x04,0x7e,0xba,0x77,0xd6,0x26,0xe1,0x69,0x14,0x63,0x55,0x21,0x0c,0x7d
     };
+    private final int[] roundConstants = {
+            0x00000000,
+            0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000,
+            0x20000000, 0x40000000, 0x80000000, 0x1B000000, 0x36000000
+    };
 
     // Abridged PBKDF2-style salted masterKey stretching
     public byte[] keySaltedStretch(byte[] keyBytes, int keyLength, byte[] salt) {
@@ -195,20 +200,14 @@ public class EncryptionService {
         for (int i = 8; i < 60; i++) {
             int firstWord_ofRow = expansionArr[i - 1];
             if (i % 8 == 0) {
-                firstWord_ofRow = gFunction(firstWord_ofRow, i / 8);
+                // G function
+                firstWord_ofRow = subByte((firstWord_ofRow << 8) | (firstWord_ofRow >>> 24), false) ^ roundConstants[i / 8];
             } else if (i % 8 == 4) {
                 firstWord_ofRow = subByte(firstWord_ofRow, false);
             }
             expansionArr[i] = expansionArr[i - 8] ^ firstWord_ofRow;
         }
         return expansionArr;
-    }
-    public int gFunction(int input, int roundCtr) {
-        int roundConstant = 2;
-        for (int i = 1; i <= roundCtr; i++) {
-            roundConstant = galoisMultiplyGF16(roundConstant, 2);
-        }
-        return subByte((input << 8) | (input >>> 24), false) ^ (roundConstant << 24);
     }
     public int subByte(int input, boolean inverse) {
         int toReturn = 0;
