@@ -56,7 +56,7 @@ class UserServiceTest {
 
         when(encryptionService.keySaltedStretch(any(), anyInt(), any())).thenReturn(hash);
         when(encryptionService.rijndael256expansion(any())).thenReturn(new int[]{});
-        when(encryptionService.aes256encryptionCBC(any(), any(), any())).thenReturn(new byte[]{42});
+        when(encryptionService.aes256encryptionGCM(any(), any(), any())).thenReturn(new byte[]{42});
 
         boolean result = userService.createMessage("Izzeme Mario", "Yiieeepiyeahh!", "password0123456789");
         assertTrue(result);

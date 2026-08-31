@@ -23,7 +23,7 @@ export default function App() {
     <div className="container">
       <header>
         <h1>Online Encryption Hub</h1>
-        <p>Stateless password-based zero-memory encryption-service</p>
+        <p>Fullstack Cryptography Application</p>
       </header>
 
       <div className="tabs">

@@ -27,6 +27,7 @@ public class EncryptionService {
             0xe1,0xf8,0x98,0x11,0x69,0xd9,0x8e,0x94,0x9b,0x1e,0x87,0xe9,0xce,0x55,0x28,0xdf,
             0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16
     };
+    /*
     private final short[] rijndaelInverseSBOX = new short[]{
             0x52,0x09,0x6a,0xd5,0x30,0x36,0xa5,0x38,0xbf,0x40,0xa3,0x9e,0x81,0xf3,0xd7,0xfb,
             0x7c,0xe3,0x39,0x82,0x9b,0x2f,0xff,0x87,0x34,0x8e,0x43,0x44,0xc4,0xde,0xe9,0xcb,
@@ -45,6 +46,8 @@ public class EncryptionService {
             0xa0,0xe0,0x3b,0x4d,0xae,0x2a,0xf5,0xb0,0xc8,0xeb,0xbb,0x3c,0x83,0x53,0x99,0x61,
             0x17,0x2b,0x04,0x7e,0xba,0x77,0xd6,0x26,0xe1,0x69,0x14,0x63,0x55,0x21,0x0c,0x7d
     };
+
+     */
     private final int[] roundConstants = {
             0x00000000,
             0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000,
@@ -211,10 +214,11 @@ public class EncryptionService {
     }
     public int subByte(int input, boolean inverse) {
         int toReturn = 0;
-        short[] sboxChosen = inverse ? rijndaelInverseSBOX : rijndaelSBOX;
+        //short[] sboxChosen = inverse ? rijndaelInverseSBOX : rijndaelSBOX;
+
         for (int i = 0; i < 4; i++) {
             int bite = (input >>> (i * 8)) & 0xFF;
-            toReturn |= sboxChosen[bite] << (i * 8);
+            toReturn |= rijndaelSBOX[bite] << (i * 8);
         }
         return toReturn; // input 4 bytes; output 4 bytes
     }
@@ -247,92 +251,118 @@ public class EncryptionService {
 
             int[] output = new int[4];
             if (!inverse) {
-                output[0] = galoisMultiplyGF16(byte0, 2) ^ galoisMultiplyGF16(byte1, 3) ^ byte2 ^ byte3;
-                output[1] = byte0 ^ galoisMultiplyGF16(byte1, 2) ^ galoisMultiplyGF16(byte2, 3) ^ byte3;
-                output[2] = byte0 ^ byte1 ^ galoisMultiplyGF16(byte2, 2) ^ galoisMultiplyGF16(byte3, 3);
-                output[3] = galoisMultiplyGF16(byte0, 3) ^ byte1 ^ byte2 ^ galoisMultiplyGF16(byte3, 2);
+                output[0] = galoisMultiplyGF2_8(byte0, 2) ^ galoisMultiplyGF2_8(byte1, 3) ^ byte2 ^ byte3;
+                output[1] = byte0 ^ galoisMultiplyGF2_8(byte1, 2) ^ galoisMultiplyGF2_8(byte2, 3) ^ byte3;
+                output[2] = byte0 ^ byte1 ^ galoisMultiplyGF2_8(byte2, 2) ^ galoisMultiplyGF2_8(byte3, 3);
+                output[3] = galoisMultiplyGF2_8(byte0, 3) ^ byte1 ^ byte2 ^ galoisMultiplyGF2_8(byte3, 2);
             } else {
-                output[0] = galoisMultiplyGF16(byte0, 14) ^ galoisMultiplyGF16(byte1, 11) ^ galoisMultiplyGF16(byte2, 13) ^ galoisMultiplyGF16(byte3, 9);
-                output[1] = galoisMultiplyGF16(byte0, 9) ^ galoisMultiplyGF16(byte1, 14) ^ galoisMultiplyGF16(byte2, 11) ^ galoisMultiplyGF16(byte3, 13);
-                output[2] = galoisMultiplyGF16(byte0, 13) ^ galoisMultiplyGF16(byte1, 9) ^ galoisMultiplyGF16(byte2, 14) ^ galoisMultiplyGF16(byte3, 11);
-                output[3] = galoisMultiplyGF16(byte0, 11) ^ galoisMultiplyGF16(byte1, 13) ^ galoisMultiplyGF16(byte2, 9) ^ galoisMultiplyGF16(byte3, 14);
+                output[0] = galoisMultiplyGF2_8(byte0, 14) ^ galoisMultiplyGF2_8(byte1, 11) ^ galoisMultiplyGF2_8(byte2, 13) ^ galoisMultiplyGF2_8(byte3, 9);
+                output[1] = galoisMultiplyGF2_8(byte0, 9) ^ galoisMultiplyGF2_8(byte1, 14) ^ galoisMultiplyGF2_8(byte2, 11) ^ galoisMultiplyGF2_8(byte3, 13);
+                output[2] = galoisMultiplyGF2_8(byte0, 13) ^ galoisMultiplyGF2_8(byte1, 9) ^ galoisMultiplyGF2_8(byte2, 14) ^ galoisMultiplyGF2_8(byte3, 11);
+                output[3] = galoisMultiplyGF2_8(byte0, 11) ^ galoisMultiplyGF2_8(byte1, 13) ^ galoisMultiplyGF2_8(byte2, 9) ^ galoisMultiplyGF2_8(byte3, 14);
             }
             operand[i] = (output[0] << 24) | (output[1] << 16) | (output[2] << 8) | output[3];
         }
     }
 
-    public byte[] aes256encryptionCBC(byte[] plaintextBytesUnpadded, int[] expansionArr, byte[] iv) {
-        byte[] plaintextBytesPadded;
+    private byte[] galoisHash(byte[] H, byte[] ciphertext) {
+        long[] hLong = byteToLongArr(H);
+        long[] toReturn = new long[2];
 
-        // PKCS#7 padding
-        int plaintextLength = plaintextBytesUnpadded.length;
-        int plaintextRemainder = 16 - (plaintextLength % 16);
-        plaintextBytesPadded = new byte[plaintextLength + plaintextRemainder];
-
-        System.arraycopy(plaintextBytesUnpadded, 0, plaintextBytesPadded, 0, plaintextBytesUnpadded.length);
-        for (int byteIndex = plaintextBytesUnpadded.length; byteIndex < plaintextBytesPadded.length; byteIndex++) {
-            plaintextBytesPadded[byteIndex] = (byte) plaintextRemainder;
+        // hashing through non-padded blocks
+        int blockCount_totalInCiphertext = ciphertext.length / 16;
+        for (int i = 0; i < blockCount_totalInCiphertext; i++) {
+            long[] cipherBlockLong =
+                    byteToLongArr(
+                            Arrays.copyOfRange(ciphertext, i * 16, i * 16 + 16)
+                    );
+            toReturn[0] ^= cipherBlockLong[0];
+            toReturn[1] ^= cipherBlockLong[1];
+            toReturn = galoisMultiplyGF2_128(toReturn, hLong);
         }
 
-        byte[][] plaintext16ByteBlocks = new byte[plaintextBytesPadded.length / 16][16];
-        for (int i = 0; i < plaintextBytesPadded.length; i++) {
-            plaintext16ByteBlocks[i/16][i%16] = plaintextBytesPadded[i];
+        // hashing through padded block
+        int remainder = ciphertext.length % 16;
+        if (remainder > 0) {
+            byte[] cipherBlockBytes = new byte[16];
+            System.arraycopy(ciphertext, blockCount_totalInCiphertext * 16, cipherBlockBytes, 0, remainder);
+            long[] cipherBlockLong = byteToLongArr(cipherBlockBytes);
+            toReturn[0] ^= cipherBlockLong[0];
+            toReturn[1] ^= cipherBlockLong[1];
+            toReturn = galoisMultiplyGF2_128(toReturn, hLong);
         }
 
-        byte[] cipherblockPrev = iv;
-        for (int i = 0; i < plaintext16ByteBlocks.length; i++) {
-            for (int k = 0; k < 16; k++) {
-                plaintext16ByteBlocks[i][k] ^= cipherblockPrev[k];
-            }
+        long ciphertextBitlength = (long) ciphertext.length * 8;
+        toReturn[0] ^= 0L; // AAD value (set to 0)
+        toReturn[1] ^= ciphertextBitlength;
+        toReturn = galoisMultiplyGF2_128(toReturn, hLong);
 
-            plaintext16ByteBlocks[i] = rijndael256encrypt(plaintext16ByteBlocks[i], expansionArr);
-            cipherblockPrev = plaintext16ByteBlocks[i];
-        }
-
-        for (int i = 0; i < plaintext16ByteBlocks.length; i++) {
-            for (int k = 0; k < 16; k++) {
-                plaintextBytesPadded[16*i + k] = plaintext16ByteBlocks[i][k];
-            }
-        }
-
-        return plaintextBytesPadded;
+        return longToByteArr(toReturn);
     }
-    public String aes256decryptionCBC(byte[] ciphertextInput, int[] expansionArr, byte[] iv) {
 
-        byte[][] ciphertext16ByteBlocks = new byte[ciphertextInput.length / 16][16];
-        for (int i = 0; i < ciphertextInput.length; i++) {
-            ciphertext16ByteBlocks[i/16][i%16] = ciphertextInput[i];
-        }
+    public byte[] aes256encryptionGCM(byte[] plaintextBytes, int[] expansionArr, byte[] nonce96Bit) {
+        byte[] H = rijndael256encrypt(new byte[16], expansionArr);
 
-        byte[] cipherblockPrev = iv;
-        for (int i = 0; i < ciphertext16ByteBlocks.length; i++) {
-            byte[] cipherblockPresent = ciphertext16ByteBlocks[i].clone();
-            byte[] plaintextBlock = rijndael256decrypt(ciphertext16ByteBlocks[i], expansionArr);
-            for (int k = 0; k < 16; k++) {
-                ciphertext16ByteBlocks[i][k] = (byte) (plaintextBlock[k] ^ cipherblockPrev[k]);
-            }
-            cipherblockPrev = cipherblockPresent;
-        }
+        byte[] J0 = new byte[16]; // nonce + counter
+        System.arraycopy(nonce96Bit, 0, J0, 0, 12);
+        J0[15] = 1;
+        byte[] J0incremented = J0.clone();
 
-        byte[] returnedPlaintext = ciphertextInput.clone();
-        for (int i = 0; i < ciphertext16ByteBlocks.length; i++) {
-            for (int k = 0; k < 16; k++) {
-                returnedPlaintext[16*i + k] = ciphertext16ByteBlocks[i][k];
+        byte[] ciphertextBytes = new byte[plaintextBytes.length];
+        for (int i = 0; i < plaintextBytes.length; i += 16) {
+            for (int k = 15; k >= 12; k--) if (++J0incremented[k] != 0) break;
+            byte[] J0incrementedCiphertext = rijndael256encrypt(J0incremented, expansionArr);
+
+            int lengthOf_presentBlock = Math.min(16, plaintextBytes.length - i);
+            for (int k = 0; k < lengthOf_presentBlock; k++) {
+                ciphertextBytes[i + k] = (byte) (plaintextBytes[i + k] ^ J0incrementedCiphertext[k]);
             }
         }
 
-
-        // Removing any PKCS#7 padding that was done during encryption
-        int padValue = returnedPlaintext[returnedPlaintext.length - 1] & 0xFF;
-        if (padValue < 1 || padValue > 16) throw new IllegalArgumentException("Invalid padding"); // this exception causes a generic fallback in the frontend fetchMessages() decryption-call.
-        for (int i = 1; i <= padValue; i++) {
-            if (returnedPlaintext[returnedPlaintext.length - i] != padValue) throw new IllegalArgumentException("Invalid padding");
+        byte[] tag = new byte[16];
+        byte[] J0Ciphertext = rijndael256encrypt(J0, expansionArr);
+        for (int i = 0; i < 16; i++) {
+            tag[i] = (byte) (galoisHash(H, ciphertextBytes)[i] ^ J0Ciphertext[i]);
         }
-        return new String(
-                returnedPlaintext, 0,
-                returnedPlaintext.length - (returnedPlaintext[returnedPlaintext.length - 1] & 0xFF),
-                java.nio.charset.StandardCharsets.UTF_8
-        );
+        byte[] finalOutput = new byte[ciphertextBytes.length + 16];
+        System.arraycopy(ciphertextBytes, 0, finalOutput, 0, ciphertextBytes.length);
+        System.arraycopy(tag, 0, finalOutput, ciphertextBytes.length, 16);
+        return finalOutput;
+    }
+    public String aes256decryptionGCM(byte[] ciphertextInput, int[] expansionArr, byte[] nonce96Bit) {
+        if (ciphertextInput.length < 16) throw new IllegalArgumentException("There are too few ciphertext bytes for a GCM tag to possibly exist.");
+        int ciphertextByteCount = ciphertextInput.length - 16;
+        byte[] ciphertextBytes = new byte[ciphertextByteCount];
+        byte[] inputTagGCM = new byte[16];
+        System.arraycopy(ciphertextInput, 0, ciphertextBytes, 0, ciphertextByteCount);
+        System.arraycopy(ciphertextInput, ciphertextByteCount, inputTagGCM, 0, 16);
+
+        byte[] H = rijndael256encrypt(new byte[16], expansionArr);
+        byte[] J0 = new byte[16]; // nonce + counter
+        System.arraycopy(nonce96Bit, 0, J0, 0, 12);
+        J0[15] = 1;
+
+        byte[] expectedTagGCM = new byte[16];
+        byte[] J0Ciphertext = rijndael256encrypt(J0, expansionArr);
+        for (int i = 0; i < 16; i++) {
+            expectedTagGCM[i] = (byte) (galoisHash(H, ciphertextBytes)[i] ^ J0Ciphertext[i]);
+        }
+
+        if (!compareByteArrays_constantTime(expectedTagGCM, inputTagGCM)) throw new IllegalArgumentException("Message tampered or wrong password!");
+
+        byte[] J0incremented = J0.clone();
+        byte[] plaintextBytes = new byte[ciphertextByteCount];
+
+        for (int i = 0; i < ciphertextByteCount; i += 16) {
+            for (int k = 15; k >= 12; k--) if (++J0incremented[k] != 0) break;
+            byte[] J0incrementedCiphertext = rijndael256encrypt(J0incremented, expansionArr);
+
+            int lengthOf_presentBlock = Math.min(16, ciphertextBytes.length - i);
+            for (int k = 0; k < lengthOf_presentBlock; k++) {
+                plaintextBytes[i + k] = (byte) (ciphertextBytes[i + k] ^ J0incrementedCiphertext[k]);
+            }
+        }
+        return new String(plaintextBytes, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     // returns a 16-byte ciphertext-block per 16-byte plaintext-block
@@ -396,6 +426,7 @@ public class EncryptionService {
         return ciphertextBlock;
     }
 
+    /*
     public byte[] rijndael256decrypt(byte[] ciphertextInput, int[] expansionArr) {
         byte[] ciphertextBytes = ciphertextInput.clone();
 
@@ -457,9 +488,84 @@ public class EncryptionService {
 
         return ciphertextBytes;
     }
+    public byte[] paddingPKCS7(byte[] unpaddedBytes) {
+        byte[] paddedBytes;
+        int plaintextLength = unpaddedBytes.length;
+        int plaintextRemainder = 16 - (plaintextLength % 16);
+        paddedBytes = new byte[plaintextLength + plaintextRemainder];
+        System.arraycopy(unpaddedBytes, 0, paddedBytes, 0, unpaddedBytes.length);
+        for (int byteIndex = unpaddedBytes.length; byteIndex < paddedBytes.length; byteIndex++) {
+            paddedBytes[byteIndex] = (byte) plaintextRemainder;
+        }
+        return paddedBytes;
+    }
+    public byte[] aes256encryptionCBC(byte[] plaintextBytesUnpadded, int[] expansionArr, byte[] iv) {
+        byte[] plaintextBytesPadded = paddingPKCS7(plaintextBytesUnpadded);
+
+        byte[][] plaintext16ByteBlocks = new byte[plaintextBytesPadded.length / 16][16];
+        for (int i = 0; i < plaintextBytesPadded.length; i++) {
+            plaintext16ByteBlocks[i/16][i%16] = plaintextBytesPadded[i];
+        }
+
+        byte[] cipherblockPrev = iv;
+        for (int i = 0; i < plaintext16ByteBlocks.length; i++) {
+            for (int k = 0; k < 16; k++) {
+                plaintext16ByteBlocks[i][k] ^= cipherblockPrev[k];
+            }
+
+            plaintext16ByteBlocks[i] = rijndael256encrypt(plaintext16ByteBlocks[i], expansionArr);
+            cipherblockPrev = plaintext16ByteBlocks[i];
+        }
+
+        for (int i = 0; i < plaintext16ByteBlocks.length; i++) {
+            for (int k = 0; k < 16; k++) {
+                plaintextBytesPadded[16*i + k] = plaintext16ByteBlocks[i][k];
+            }
+        }
+
+        return plaintextBytesPadded;
+    }
+    public String aes256decryptionCBC(byte[] ciphertextInput, int[] expansionArr, byte[] iv) {
+
+        byte[][] ciphertext16ByteBlocks = new byte[ciphertextInput.length / 16][16];
+        for (int i = 0; i < ciphertextInput.length; i++) {
+            ciphertext16ByteBlocks[i/16][i%16] = ciphertextInput[i];
+        }
+
+        byte[] cipherblockPrev = iv;
+        for (int i = 0; i < ciphertext16ByteBlocks.length; i++) {
+            byte[] cipherblockPresent = ciphertext16ByteBlocks[i].clone();
+            byte[] plaintextBlock = rijndael256decrypt(ciphertext16ByteBlocks[i], expansionArr);
+            for (int k = 0; k < 16; k++) {
+                ciphertext16ByteBlocks[i][k] = (byte) (plaintextBlock[k] ^ cipherblockPrev[k]);
+            }
+            cipherblockPrev = cipherblockPresent;
+        }
+
+        byte[] returnedPlaintext = ciphertextInput.clone();
+        for (int i = 0; i < ciphertext16ByteBlocks.length; i++) {
+            for (int k = 0; k < 16; k++) {
+                returnedPlaintext[16*i + k] = ciphertext16ByteBlocks[i][k];
+            }
+        }
+
+
+        // Removing any PKCS#7 padding that was done during encryption
+        int padValue = returnedPlaintext[returnedPlaintext.length - 1] & 0xFF;
+        if (padValue < 1 || padValue > 16) throw new IllegalArgumentException("Invalid padding"); // this exception causes a generic fallback in the frontend fetchMessages() decryption-call.
+        for (int i = 1; i <= padValue; i++) {
+            if (returnedPlaintext[returnedPlaintext.length - i] != padValue) throw new IllegalArgumentException("Invalid padding");
+        }
+        return new String(
+                returnedPlaintext, 0,
+                returnedPlaintext.length - (returnedPlaintext[returnedPlaintext.length - 1] & 0xFF),
+                java.nio.charset.StandardCharsets.UTF_8
+        );
+    }
+     */
 
     // finite-field multiplication in GF(2^8)
-    public int galoisMultiplyGF16(int operand1, int operand2) {
+    public int galoisMultiplyGF2_8(int operand1, int operand2) {
         int product = 0;
         for (int i = 0; i < 8; i++) {
             if ((operand2 & 1) != 0) {
@@ -467,9 +573,73 @@ public class EncryptionService {
             }
             boolean willOverflow = (operand1 & 0x80) != 0;
             operand1 <<= 1;
-            if (willOverflow) operand1 ^= 0x11b; // multiply operand1 by GF(2^8) polynomial (0x11b) until it is certainly within the Galois field
+            if (willOverflow) {
+                // multiply operand1 by GF(2^8) polynomial 0x11b until it is certainly within the Galois field.
+                operand1 ^= 0x11b;
+            }
             operand2 >>= 1;
         }
         return product & 0xFF;
+    }
+
+    // finite-field multiplication in GF(2^128) while abiding by GHASH specifications
+    public long[] galoisMultiplyGF2_128(long[] operand1, long[] operand2) {
+        long[] product = new long[2];
+        long low1 = operand1[0], high1 = operand1[1];
+
+        for (int i = 0; i < 128; i++) {
+            long presentBit_operand2 = (i < 64) ? ((operand2[0] >>> i) & 1L) : ((operand2[1] >>> (i - 64)) & 1L);
+
+            // every time a 1-bit is found in operand2, XORing the product-array with the proper rotation of operand1 will function as addition.
+            if (presentBit_operand2 == 1L) {
+                product[0] ^= low1;
+                product[1] ^= high1;
+            }
+
+            // If the least-significant-bit of operand1 is 1, operand1 will overflow during right rotation.
+            boolean willOverflow = ((high1 & 1L) == 1L);
+
+            // Multiplying operand1 by 2, which translates to right rotation of operand1 by 1 bit
+            high1 = (high1 >>> 1) | (low1 << 63);
+            low1 = (low1 >>> 1);
+
+            // multiply operand1 by GF(2^128) reversed polynomial 0xE1 until it is certainly within the Galois field.
+            if (willOverflow) {
+                low1 ^= 0xE100000000000000L;
+            }
+        }
+        return product;
+    }
+    public long[] byteToLongArr(byte[] block16) {
+        long[] toReturn = new long[2];
+        for (int i = 0; i < 8; i++) {
+            toReturn[0] = (toReturn[0] << 8) | (block16[i] & 0xFFL);
+            toReturn[1] = (toReturn[1] << 8) | (block16[i + 8] & 0xFFL);
+        }
+        return toReturn;
+    }
+    public byte[] longToByteArr(long[] long2) {
+        byte[] toReturn = new byte[16];
+        for (int i = 0; i <= 1; i++) {
+            toReturn[8*i]     = (byte)(long2[i] >>> 56);
+            toReturn[8*i + 1] = (byte)(long2[i] >>> 48);
+            toReturn[8*i + 2] = (byte)(long2[i] >>> 40);
+            toReturn[8*i + 3] = (byte)(long2[i] >>> 32);
+            toReturn[8*i + 4] = (byte)(long2[i] >>> 24);
+            toReturn[8*i + 5] = (byte)(long2[i] >>> 16);
+            toReturn[8*i + 6] = (byte)(long2[i] >>>  8);
+            toReturn[8*i + 7] = (byte)(long2[i]);
+        }
+        return toReturn;
+    }
+
+    // Constant-time array comparison for timing-attack prevention
+    public boolean compareByteArrays_constantTime(byte[] arr1, byte[] arr2) {
+        if (arr1.length != arr2.length) return false;
+        int byteConcatenation = 0;
+        for (int i = 0; i < arr1.length; i++) {
+            byteConcatenation |= (arr1[i] ^ arr2[i]);
+        }
+        return byteConcatenation == 0;
     }
 }

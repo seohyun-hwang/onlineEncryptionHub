@@ -9,26 +9,26 @@ Ports: http://localhost:8080/ for backend; http://localhost:5173/ for frontend.
 
 ## Basic project information
 
-This project was done for self-study on cryptographic algorithms, bitwise operations, finite-field arithmetic, SpringBoot, Rest API, database interaction, unit-test writing, and UI/UX integration with ReactJS frontend.
+This project was done for self-study on cryptographic algorithms, bitwise operations, finite-field arithmetic in GF(2^8) and GF(2^128), SpringBoot, Rest API, database interaction, unit-test writing, and UI/UX integration with ReactJS frontend.
 
 The application asks you to create an account with a username and password, after which it lets you store encrypted text-entries in a database (which is cleared as soon as the backend program is terminated).
 
 Features:
 1. Create account (SHA-256 password hashing)
 2. Delete account (eradication of all account data)
-3. Create message (AES-256 message encryption)
+3. Create message (AES-256-GCM message encryption)
 4. Delete message (eradiation of all message data)
-5. Show all messages upon login (AES-256 message decryption)
+5. Show all messages upon login (AES-256-GCM message decryption)
 
-Your text-entries are encrypted using Rijndael AES-256 cryptography with Cipher Block Chaining.
+Your text-entries are encrypted using Rijndael AES-256 cryptography with Galois Counter Mode.
 Your password is encrypted using a one-way SHA-256 hashing algorithm.
 Passwords are salted and stretched using abridged PBKDF2 (uses SHA instead of HMAC-SHA; explained two paragraphs down).
 
 
-My core cryptographic algorithms (PBKDF2, SHA-256, AES-256, CBC mode) are ***fully custom-rolled*** with no use of cipher libraries.
+My core cryptographic algorithms (PBKDF2, SHA-256, AES-256-GCM) are ***fully custom-rolled*** with no use of cipher libraries.
 While custom-rolled cryptography is unprofessional and highly vulnerable to side-channel attacks, I believed it to be worth the practice. The code for all my cryptography is found in `src/main/java/service/EncryptionService.java`.
 
-This project is exclusively server-side, so I refrained from Message Authentication measures (such as AES-GCM and HMAC) which would have added significant security to the application but cannot be implemented on the Application layer without dedicated client-side software.
+I first attempted AES-256 with CBC mode (as seen in the long comments) and later switched to GCM mode.
 
 The high-level method-calling of these cryptographic algorithms in `src/main/java/service/UserService.java` uses a little help, as seen by 1. the import `java.security.SecureRandom` for more-secure pseudorandom number generation of salts and 2. the method call `java.security.MessageDigest.isEqual()` for constant-time array comparison of hashed values.
 

@@ -18,16 +18,16 @@ class EncryptionServiceTest {
         String plaintext = "This is the plaintext.";
         byte[] plaintextBytes = plaintext.getBytes(StandardCharsets.UTF_8);
         byte[] masterKey = "password0123456789".getBytes(StandardCharsets.UTF_8);
-        byte[] iv = new byte[16];
+        byte[] iv = new byte[12];
         secureRandom.nextBytes(iv);
         byte[] salt = new byte[32];
         secureRandom.nextBytes(salt);
 
         byte[] stretchedKey = encryptionService.keySaltedStretch(masterKey, masterKey.length, salt);
         int[] roundKeys = encryptionService.rijndael256expansion(stretchedKey);
-        byte[] ciphertext = encryptionService.aes256encryptionCBC(plaintextBytes, roundKeys, iv);
+        byte[] ciphertext = encryptionService.aes256encryptionGCM(plaintextBytes, roundKeys, iv);
 
-        String decrypted = encryptionService.aes256decryptionCBC(ciphertext, roundKeys, iv);
+        String decrypted = encryptionService.aes256decryptionGCM(ciphertext, roundKeys, iv);
         assertNotNull(ciphertext);
         assertNotEquals(plaintext, new String(ciphertext));
         assertEquals(plaintext, decrypted);

@@ -46,13 +46,13 @@ public class UserService {
         Account account = accountOptional.get();
 
         if (!passwordMatch(account, password)) return false;
-        byte[] initializationVector = new byte[16];
+        byte[] initializationVector = new byte[12];
         secureRandom.nextBytes(initializationVector);
 
         byte[] masterKey = password.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        byte[] messageCiphertext = encryptionService.aes256encryptionCBC(
+        byte[] messageCiphertext = encryptionService.aes256encryptionGCM(
                 messagePlaintext.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-                encryptionService.rijndael256expansion(encryptionService.keySaltedStretch(masterKey, masterKey.length, account.getExpansionSaltSHA256())),
+                encryptionService.rijndael256expansion(encryptionService.keySaltedStretch(masterKey, masterKey.length, account.getExpansionSalt())),
                 initializationVector
         );
         Message newMessage = new Message(account, messageCiphertext, initializationVector);
@@ -72,11 +72,10 @@ public class UserService {
         return true;
     }
     public boolean passwordMatch(Account account, String password) {
-        byte[] passwordSalt = account.getSaltSHA256();
+        byte[] passwordSalt = account.getPasswordSalt();
         byte[] passwordBytes = password.getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
-        // array-comparison with timing-attack prevention
-        return java.security.MessageDigest.isEqual(
+        return encryptionService.compareByteArrays_constantTime(
                 encryptionService.keySaltedStretch(passwordBytes, passwordBytes.length, passwordSalt),
                 account.getPasswordHash()
         );
@@ -84,9 +83,9 @@ public class UserService {
     public Map<Integer, String> getAllStoredPlaintext_byAccount(Account account, String password) {
         Map<Integer, String> map = new HashMap<>();
         byte[] masterKey = password.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        int[] roundKeys = encryptionService.rijndael256expansion(encryptionService.keySaltedStretch(masterKey, masterKey.length, account.getExpansionSaltSHA256()));
+        int[] roundKeys = encryptionService.rijndael256expansion(encryptionService.keySaltedStretch(masterKey, masterKey.length, account.getExpansionSalt()));
         for (Message message : messageRepo.findAllByAccount(account)) {
-            map.put(message.getMessageId(), encryptionService.aes256decryptionCBC(message.getMessageCiphertext(), roundKeys, message.getInitializationVector()));
+            map.put(message.getMessageId(), encryptionService.aes256decryptionGCM(message.getMessageCiphertext(), roundKeys, message.getInitializationVector()));
         }
         return map;
     }
@@ -98,7 +97,7 @@ public class UserService {
         Account account = accountOptional.get();
         if (!passwordMatch(account, password)) return false;
         Message message = getMessageById(messageId);
-        if (!messageRepo.findAllByAccount(account).contains(message)) return false;
+        if (message.getAccount().getAccountId() != account.getAccountId()) return false;
         messageRepo.delete(message);
         return true;
     }

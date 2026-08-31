@@ -39,8 +39,8 @@ public class Account {
     public byte[] getPasswordHash() {
         return passwordHash;
     }
-    public byte[] getSaltSHA256() { return passwordSalt; }
-    public byte[] getExpansionSaltSHA256() { return expansionSalt; }
+    public byte[] getPasswordSalt() { return passwordSalt; }
+    public byte[] getExpansionSalt() { return expansionSalt; }
 
     // SETTERS
     public void addToAssociatedMessagesList(Message message) {
