@@ -325,7 +325,7 @@ public class EncryptionService {
 
         // Removing any PKCS#7 padding that was done during encryption
         int padValue = returnedPlaintext[returnedPlaintext.length - 1] & 0xFF;
-        if (padValue < 1 || padValue > 16) throw new IllegalArgumentException("Invalid padding");
+        if (padValue < 1 || padValue > 16) throw new IllegalArgumentException("Invalid padding"); // this exception causes a generic fallback in the frontend fetchMessages() decryption-call.
         for (int i = 1; i <= padValue; i++) {
             if (returnedPlaintext[returnedPlaintext.length - i] != padValue) throw new IllegalArgumentException("Invalid padding");
         }

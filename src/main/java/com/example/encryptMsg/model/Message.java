@@ -34,4 +34,8 @@ public class Message {
     public byte[] getMessageCiphertext() { return messageCiphertext; }
     public byte[] getInitializationVector() { return initializationVector; }
 
+    // SETTERS
+    public void setAccount(Account account) {
+        this.account = account;
+    }
 }

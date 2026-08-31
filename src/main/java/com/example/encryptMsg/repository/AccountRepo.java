@@ -9,4 +9,11 @@ import java.util.Optional;
 @Repository
 public interface AccountRepo extends JpaRepository<Account, Integer> {
     Optional<Account> findByUsername(String username);
+    /*
+    SQL prompt idea: get all account-data that corresponds to a specific username.
+
+    SELECT account_id, username, password_hash, password_salt, expansion_salt, associated_messages_list
+    FROM message
+    WHERE username = ?;
+     */
 }

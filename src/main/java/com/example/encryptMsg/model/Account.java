@@ -14,19 +14,19 @@ public class Account {
     @Column(unique = true, nullable = false) // protection against username-claim race-condition
     private String username;
     private byte[] passwordHash; // one-way salted SHA-256 encryption
-    private byte[] saltSHA256;
-    private byte[] expansionSaltSHA256;
+    private byte[] passwordSalt; // SHA-256 salt to store account password
+    private byte[] expansionSalt; // SHA-256 salt for key-expansion in AES-256 message cipher
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<Message> associatedMessagesList = new ArrayList<>();
+    private List<Message> associatedMessagesList = new ArrayList<>();
 
     public Account() {
     }
 
-    public Account(String username, byte[] passwordHash, byte[] saltSHA256, byte[] expansionSaltSHA256) {
+    public Account(String username, byte[] passwordHash, byte[] passwordSalt, byte[] expansionSalt) {
         this.username = username;
         this.passwordHash = passwordHash;
-        this.saltSHA256 = saltSHA256;
-        this.expansionSaltSHA256 = expansionSaltSHA256;
+        this.passwordSalt = passwordSalt;
+        this.expansionSalt = expansionSalt;
     }
 
 
@@ -39,11 +39,12 @@ public class Account {
     public byte[] getPasswordHash() {
         return passwordHash;
     }
-    public byte[] getSaltSHA256() { return saltSHA256; }
-    public byte[] getExpansionSaltSHA256() { return expansionSaltSHA256; }
+    public byte[] getSaltSHA256() { return passwordSalt; }
+    public byte[] getExpansionSaltSHA256() { return expansionSalt; }
 
     // SETTERS
     public void addToAssociatedMessagesList(Message message) {
         associatedMessagesList.add(message);
+        message.setAccount(this);
     }
 }

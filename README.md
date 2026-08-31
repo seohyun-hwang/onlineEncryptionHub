@@ -39,7 +39,7 @@ All unit-tests are found in `src/test/java/com.example.encryptMsg/`. Mockito is 
 ### Backend development tools
 Java 21, SpringBoot 4.1.0, Maven 4.0.0, Jar packaging, Properties configuration
 
-Key dependencies: Spring Web, Spring Boot DevTools, Spring Data JPA, Spring Web MVC, H2 Database (Hibernate)
+Key dependencies: Spring Web, Spring Boot DevTools, Spring Data JPA, Spring Web MVC, H2 Database
 
 Key plugins: Eirslett Frontend Maven 1.15.1, Maven Resources node 20.11.0 npm 10.2.4
 
