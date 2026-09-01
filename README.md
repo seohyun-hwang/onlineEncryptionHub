@@ -30,8 +30,6 @@ While custom-rolled cryptography is unprofessional and highly vulnerable to side
 
 I first attempted AES-256 with CBC mode (as seen in the long comments) and later switched to GCM mode.
 
-The high-level method-calling of these cryptographic algorithms in `src/main/java/service/UserService.java` uses a little help, as seen by 1. the import `java.security.SecureRandom` for more-secure pseudorandom number generation of salts and 2. the method call `java.security.MessageDigest.isEqual()` for constant-time array comparison of hashed values.
-
 All Rest API communication to the frontend is found in `src/main/java/controller/UserController.java`.
 
 All unit-tests are found in `src/test/java/com.example.encryptMsg/`. Mockito is the mocking framework used in `UserControllerTest.java` and `UserServiceTest.java`.
