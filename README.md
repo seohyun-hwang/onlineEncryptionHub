@@ -24,11 +24,18 @@ Your text-entries are encrypted using Rijndael AES-256 cryptography with Galois 
 Your password is encrypted using a one-way SHA-256 hashing algorithm.
 Passwords are salted and stretched using abridged PBKDF2 (uses SHA instead of HMAC-SHA; explained two paragraphs down).
 
-
 My core cryptographic algorithms (PBKDF2, SHA-256, AES-256-GCM) are ***fully custom-rolled*** with no use of cipher libraries.
 While custom-rolled cryptography is unprofessional and highly vulnerable to side-channel attacks, I believed it to be worth the practice. The code for all my cryptography is found in `src/main/java/service/EncryptionService.java`.
 
-I first attempted AES-256 with CBC mode (as seen in the long comments) and later switched to GCM mode.
+I first attempted AES-256 with CBC mode and PKCS#7 padding (as seen in the long comments) and later switched to GCM mode.
+
+Additional protection implemented against:
+1. Timing attacks (by using constant-time array comparison)
+2. SQL injections (by using prepared statements)
+3. Padding oracle attacks (by implementing AES-GCM)
+4. Rainbow table attacks (by using salt)
+5. Brute-force attacks (by implementing PBKDF2)
+5. Time-of-check to Time-of-use race-condition (by immediately using system-state upon access and implementing a global exception handler in case state does not exist)
 
 All Rest API communication to the frontend is found in `src/main/java/controller/UserController.java`.
 
