@@ -27,7 +27,7 @@ export function CreateAccount() {
 
       if (response.ok) {
         const accountId = await response.json();
-        setStatus({ type: 'success', msg: `Account ${accountId} created successfully!` });
+        setStatus({ type: 'success', msg: `Account ${accountId} created successfully! Cipher mode: ${cipherModeFrontend}` });
         form.reset();
         setCipherModeFrontend('GCM');
       } else if (response.status === 409) {
@@ -57,6 +57,7 @@ export function CreateAccount() {
           <div className="button-group">
             <button
               type="button"
+              disabled={status.type === 'loading'}
               className={cipherModeFrontend === 'GCM' ? 'active' : ''}
               onClick={() => setCipherModeFrontend('GCM')}
             >
@@ -66,6 +67,7 @@ export function CreateAccount() {
             </button>
             <button
               type="button"
+              disabled={status.type === 'loading'}
               className={cipherModeFrontend === 'CBC' ? 'active' : ''}
               onClick={() => setCipherModeFrontend('CBC')}
             >

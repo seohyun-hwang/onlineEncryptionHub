@@ -23,7 +23,7 @@ export function CreateMessage() {
 
       if (response.ok) {
         const data = await response.json();
-        setStatus({ type: 'success', msg: `Encrypted securely via ${data.cipherMode} (ID: ${data.messageId})` });
+        setStatus({ type: 'success', msg: `Message ${data.messageId} encrypted and stored via ${data.cipherMode}.`});
         const plaintextInput = form.elements.namedItem('messagePlaintext') as HTMLTextAreaElement;
         if (plaintextInput) plaintextInput.value = '';
       } else if (response.status === 401) {
