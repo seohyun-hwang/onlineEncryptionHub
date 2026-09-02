@@ -15,7 +15,7 @@ Ports: http://localhost:8080/ for backend; http://localhost:5173/ for frontend.
 
 ## Basic project information
 
-This project was done for self-study on cryptographic algorithms, bitwise operations, finite-field arithmetic in GF(2^8) and GF(2^128), SpringBoot, Rest API, database interaction, unit-test writing, and UI/UX integration with ReactJS frontend.
+This project was done for self-study on cryptographic algorithms, bitwise operations, finite-field arithmetic in GF(2^8) and GF(2^128), SpringBoot, Rest API, strategy patterns, database interaction, unit-test writing, and UI/UX integration with ReactJS frontend.
 
 The application asks you to create an account with a username and password, after which it lets you store encrypted text-entries in a database (which is cleared as soon as the backend program is terminated).
 
@@ -57,6 +57,10 @@ Additional protection implemented against:
    1. Solution: accepting sensitive data from the frontend, incl. password and message-plaintext, as character-arrays instead of Strings
 6. SpringBoot's JSON parser "Jackson" parses text-inputs as Strings by default
    1. Solution: implemented a class `java/com.example.encryptMsg/config/CharArrDeserialization.java` which overrides Jackson's deserialization process to parse texts as char-arrays
+
+Strategy patterns (loosely-coupled):
+1. There is a frontend button-row in account-creation with which the user decides whether to use AES-GCM or AES-CBC as the message cipher mode. The choice of cipher-mode is then transmitted to the backend to switch between `AES256GCM.java` and `AES256CBC.java`, respectively.
+2. The editor decides whether the custom-rolled cryptography or the fully library-based cryptography is used by toggling the @Qualifier annotation argument between "custom" and "compliant". The argument determines which of the two `CryptographyToggle` interface implementations `EncryptionCompliant.java` and `EncryptionCustom.java` should be used in `UserService.java`.
 
 All Rest API communication to the frontend is found in `src/main/java/controller/UserController.java`.
 
