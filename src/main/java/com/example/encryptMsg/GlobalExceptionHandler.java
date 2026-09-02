@@ -1,4 +1,4 @@
-package com.example.encryptMsg.controller;
+package com.example.encryptMsg;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

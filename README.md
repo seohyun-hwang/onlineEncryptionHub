@@ -52,9 +52,11 @@ Additional protection implemented against:
    1. Solution: PBKDF2 key-stretching with HMAC-SHA256
 5. Time-of-check to Time-of-use race-condition
    1. Solution: immediately using system-state upon access and implementing a global exception handler for the case that the state does not exist
-   2. See global exception handler in `java/com.example/encryptMsg/controller/GlobalExceptionHandler.java`
+   2. See global exception handler in `java/com.example.encryptMsg/GlobalExceptionHandler.java`
 6. String literals are not cleared readily by Java's garbage collector
    1. Solution: accepting sensitive data from the frontend, incl. password and message-plaintext, as character-arrays instead of Strings
+2. Sensitive data just remains in memory generally until cleared by Java's garbage collector
+   3. Solution: filling arrays with 0s as soon as they are no longer needed
 6. SpringBoot's JSON parser "Jackson" parses text-inputs as Strings by default
    1. Solution: implemented a class `java/com.example.encryptMsg/config/CharArrDeserialization.java` which overrides Jackson's deserialization process to parse texts as char-arrays
 
