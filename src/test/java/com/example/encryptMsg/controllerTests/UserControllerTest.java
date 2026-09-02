@@ -1,64 +1,65 @@
 package com.example.encryptMsg.controllerTests;
 
-import com.example.encryptMsg.controller.*;
-import com.example.encryptMsg.payload.UserInfo;
+import com.example.encryptMsg.controller.UserController;
+import com.example.encryptMsg.payload.CreateMessageResponse;
 import com.example.encryptMsg.service.UserService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(UserController.class)
 class UserControllerTest {
 
+    @Autowired
     private MockMvc mockMvc;
-    private ObjectMapper objectMapper;
 
-    @Mock
+    @MockitoBean
     private UserService userService;
-    @InjectMocks
-    private UserController userController;
-
-    @BeforeEach
-    void preparationMockMVC() {
-        objectMapper = new ObjectMapper();
-        mockMvc = MockMvcBuilders.standaloneSetup(userController)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
-    }
 
     @Test
-    void createAccount_validData() throws Exception { // createAccount should return '200 OK'.
-        UserInfo info = new UserInfo();
-        info.setUsername("Darth Mater");
-        info.setPassword("password0123456789");
+    void createAccount_validData() throws Exception {
+        when(userService.createAccount(anyString(), any(char[].class), anyString())).thenReturn(1);
+        String jsonPayload = "{\"username\":\"Darth Mater\", \"password\":\"password0123456789\", \"ciphermode\":\"GCM\"}";
 
         mockMvc.perform(post("/api/accounts/create")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(info)))
-                .andExpect(status().isOk());
+                        .content(jsonPayload))
+                .andExpect(status().isOk())
+                .andExpect(content().string("1"));
     }
 
     @Test
-    void createAccount_blankUsername() throws Exception { // createAccount should return '400 Bad Request'.
-        UserInfo info = new UserInfo();
-        info.setUsername("");
-        info.setPassword("password0123456789");
+    void createAccount_blankUsername() throws Exception {
+        String jsonPayload = "{\"username\":\"\", \"password\":\"password0123456789\", \"ciphermode\":\"GCM\"}";
 
         mockMvc.perform(post("/api/accounts/create")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(info)))
+                        .content(jsonPayload))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.username").value("must not be blank"));
+                .andExpect(jsonPath("$.username").value("Username must not be empty"));
+    }
+
+    @Test
+    void createMessage_validData() throws Exception {
+        CreateMessageResponse mockResponse = new CreateMessageResponse("GCM", 42);
+        when(userService.createMessage(anyString(), any(char[].class), any(char[].class))).thenReturn(mockResponse);
+
+        String jsonPayload = "{\"username\":\"Darth Mater\", \"messagePlaintext\":\"Hello World\", \"password\":\"password0123456789\"}";
+
+        mockMvc.perform(post("/api/messages/create")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cipherMode").value("GCM"))
+                .andExpect(jsonPath("$.messageId").value(42));
     }
 }

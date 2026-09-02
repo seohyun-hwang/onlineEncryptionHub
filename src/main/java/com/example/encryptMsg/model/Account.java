@@ -16,17 +16,19 @@ public class Account {
     private byte[] passwordHash; // one-way salted SHA-256 encryption
     private byte[] passwordSalt; // SHA-256 salt to store account password
     private byte[] expansionSalt; // SHA-256 salt for key-expansion in AES-256 message cipher
+    private String ciphermode; // options: GCM, CBC
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Message> associatedMessagesList = new ArrayList<>();
 
     public Account() {
     }
 
-    public Account(String username, byte[] passwordHash, byte[] passwordSalt, byte[] expansionSalt) {
+    public Account(String username, byte[] passwordHash, byte[] passwordSalt, byte[] expansionSalt, String ciphermode) {
         this.username = username;
         this.passwordHash = passwordHash;
         this.passwordSalt = passwordSalt;
         this.expansionSalt = expansionSalt;
+        this.ciphermode = ciphermode;
     }
 
 
@@ -41,6 +43,7 @@ public class Account {
     }
     public byte[] getPasswordSalt() { return passwordSalt; }
     public byte[] getExpansionSalt() { return expansionSalt; }
+    public String getCiphermode() { return ciphermode; }
 
     // SETTERS
     public void addToAssociatedMessagesList(Message message) {

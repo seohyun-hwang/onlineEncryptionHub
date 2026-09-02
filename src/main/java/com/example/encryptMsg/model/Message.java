@@ -14,7 +14,7 @@ public class Message {
     @Lob
     @Column(columnDefinition = "BLOB") // or whatever makes sense for your intended message size
     private byte[] messageCiphertext; // [AES, masterKey: password] for storage
-    private byte[] initializationVector; // AES-CBC
+    private byte[] initializationVector; // AES-GCM or AES-CBC; either way, the iv/nonce is unique to each message.
 
     public Message() {
     }

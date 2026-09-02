@@ -1,3 +1,9 @@
+Disclaimer: Cryptographic algorithms are built completely from scratch purely for self-educational purposes. Not for production use!!!
+
+Since custom-rolled cryptography is unprofessional, I also included a fully library-based version of the cryptography in `src/main/java/EncryptionCompliant.java`. The custom version is in `EncryptionCustom.java`.
+
+To toggle from the custom-rolled version to the library-based version, go to `src/main/java/service/UserService.java`, then find the class constructor and edit `@Qualifier("custom")` to `@Qualifier("compliant")`.
+
 ## Running the project
 This is a fullstack application; the backend and frontend must be run simultaneously. The project files include both the frontend and backend.
 
@@ -16,26 +22,40 @@ The application asks you to create an account with a username and password, afte
 Features:
 1. Create account (SHA-256 password hashing)
 2. Delete account (eradication of all account data)
-3. Create message (AES-256-GCM message encryption)
+3. Create message (AES-256-GCM or AES-256-CBC message encryption depending on user-choice)
 4. Delete message (eradiation of all message data)
 5. Show all messages upon login (AES-256-GCM message decryption)
 
-Your text-entries are encrypted using Rijndael AES-256 cryptography with Galois Counter Mode.
+Your text-entries are encrypted using Rijndael AES-256 cryptography with Galois Counter Mode (GCM) or Cipher Block Chaining (CBC) based on your choice during account creation.
 Your password is encrypted using a one-way SHA-256 hashing algorithm.
-Passwords are salted and stretched using abridged PBKDF2 (uses SHA instead of HMAC-SHA; explained two paragraphs down).
+Passwords are salted and stretched using PBKDF2 (implements HMAC-SHA256).
 
 My core cryptographic algorithms (PBKDF2, SHA-256, AES-256-GCM) are ***fully custom-rolled*** with no use of cipher libraries.
-While custom-rolled cryptography is unprofessional and highly vulnerable to side-channel attacks, I believed it to be worth the practice. The code for all my cryptography is found in `src/main/java/service/EncryptionService.java`.
+While custom-rolled cryptography is unprofessional, highly vulnerable to side-channel attacks, and doesn't take advantage of hardware optimizations, I believed it to be worth the practice. The code for all my cryptography is found in `src/main/java/service/EncryptionService.java`.
 
-I first attempted AES-256 with CBC mode and PKCS#7 padding (as seen in the long comments) and later switched to GCM mode.
+As already mentioned at the top, I therefore added a fully library-based version of the cryptography in `src/main/java/EncryptionCompliant.java`.
 
 Additional protection implemented against:
-1. Timing attacks (by using constant-time array comparison)
-2. SQL injections (by using prepared statements)
-3. Padding oracle attacks (by implementing AES-GCM)
-4. Rainbow table attacks (by using salt)
-5. Brute-force attacks (by implementing PBKDF2)
-5. Time-of-check to Time-of-use race-condition (by immediately using system-state upon access and implementing a global exception handler in case state does not exist)
+1. Timing attacks 
+   1. Solution: constant-time array comparison
+3. Man-in-the-middle attacks
+   1. Solution: cipher modes (AES-GCM and AES-CBC)
+   2. Tested in `src/test/java/com.example.encryptMsg/crackingTests`
+2. SQL injections
+   1. Solution: SpringDataJPA's prepared SQL statements
+   2. Tested in `crackingTests/Injection_SQL_Tests.java`
+4. Padding oracle attacks
+   1. Solution: providing the GCM option which doesn't use padding
+4. Rainbow table attacks
+   1. Solution: using salt
+5. Brute-force attacks
+   1. Solution: PBKDF2 key-stretching with HMAC-SHA256
+5. Time-of-check to Time-of-use race-condition
+   1. Solution: immediately using system-state upon access and implementing a global exception handler for the case that the state does not exist
+6. String literals are not cleared readily by Java's garbage collector
+   1. Solution: accepting sensitive data from the frontend, incl. password and message-plaintext, as character-arrays instead of Strings
+6. SpringBoot's JSON parser "Jackson" parses text-inputs as Strings by default
+   1. Solution: implement a class `CharArrDeserialization` which overrides Jackson's deserialization process to parse texts as char-arrays
 
 All Rest API communication to the frontend is found in `src/main/java/controller/UserController.java`.
 
@@ -59,3 +79,9 @@ FIPS 197 (AES): https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf
 FIPS PUB 180-4 (SHA): https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
 
 SP 800-38D (GCM): https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf
+
+FIPS PUB 198-1 (HMAC): https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.198-1.pdf
+
+Special Publication 800-132 (PBKDF and salting): https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
+
+CMVP Overview Page (advice against custom-rolled cryptography): https://csrc.nist.gov/projects/cryptographic-module-validation-program

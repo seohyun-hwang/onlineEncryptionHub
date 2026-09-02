@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,34 +22,35 @@ public class UserController {
 
     // Account components
     @PostMapping("/accounts/create")
-    public ResponseEntity<Void> createAccount(@Valid @RequestBody UserInfo info) {
-        userService.createAccount(info.getUsername(), info.getPassword());
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Integer> createAccount(@Valid @RequestBody CreateAccountRequest info) throws Exception {
+        return ResponseEntity.ok(
+                userService.createAccount(info.getUsername(), info.getPassword(), info.getCiphermode())
+        );
     }
     @PostMapping("/accounts/delete")
-    public ResponseEntity<Void> deleteAccount(@Valid @RequestBody UserInfo info) {
-        if (!userService.deleteAccount(info.getUsername(), info.getPassword())) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        else return ResponseEntity.ok().build();
+    public ResponseEntity<Integer> deleteAccount(@Valid @RequestBody FetchMessagesRequest info) throws Exception {
+        int accountId = userService.deleteAccount(info.getUsername(), info.getPassword());
+        if (accountId == 0) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        else return ResponseEntity.ok(accountId);
     }
 
 
     // Message components
     @PostMapping("/messages/create")
-    public ResponseEntity<Void> createMessage(@Valid @RequestBody MessageCreateInfo info)
-    {
-        if (!userService.createMessage(info.getUsername(), info.getMessagePlaintext(), info.getPassword())) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        else return ResponseEntity.ok().build();
+    public ResponseEntity<CreateMessageResponse> createMessage(@Valid @RequestBody CreateMessageRequest info) throws Exception {
+        CreateMessageResponse response = userService.createMessage(info.getUsername(), info.getMessagePlaintext(), info.getPassword());
+        if (response == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        return ResponseEntity.ok(response);
     }
     @PostMapping("/messages/search")
-    public ResponseEntity<Map<Integer, String>> getAllStoredMessages_byUsername(@Valid @RequestBody UserInfo info) {
-        return userService.findByUsername(info.getUsername())
-                .filter(account -> userService.passwordMatch(account, info.getPassword()))
-                .map(account -> ResponseEntity.ok(userService.getAllStoredPlaintext_byAccount(account, info.getPassword())))
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+    public ResponseEntity<Map<Integer, char[]>> getAllStoredMessages_byUsername(@Valid @RequestBody FetchMessagesRequest info) throws Exception {
+        Map<Integer, char[]> mapToReturn = userService.getAllStoredPlaintext_byAccount(info.getUsername(), info.getPassword());
+        if (mapToReturn != null) return ResponseEntity.ok(mapToReturn);
+        else return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
     @PostMapping("/messages/delete")
-    public ResponseEntity<Void> deleteMessage(@Valid @RequestBody MessageDeleteInfo info) {
+    public ResponseEntity<Integer> deleteMessage(@Valid @RequestBody DeleteMessageRequest info) throws Exception {
         if (!userService.deleteMessage(info.getUsername(), info.getMessageId(), info.getPassword())) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        else return ResponseEntity.ok().build();
+        else return ResponseEntity.ok(info.getMessageId());
     }
 }

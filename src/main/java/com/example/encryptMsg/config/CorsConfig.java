@@ -13,7 +13,7 @@ public class CorsConfig implements WebMvcConfigurer {
                 // Port 3000: Create-React-App default
                 // Port 5173: Vite default
                 .allowedOrigins("http://localhost:3000", "http://localhost:5173")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedMethods("POST" /*, "GET", "PUT", "DELETE", "OPTIONS"*/)
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }

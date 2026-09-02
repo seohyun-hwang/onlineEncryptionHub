@@ -1,10 +1,13 @@
 package com.example.encryptMsg.service;
 
+import com.example.encryptMsg.cryptography.CryptographyToggle;
+import com.example.encryptMsg.cryptography.IV_and_Ciphertext;
 import com.example.encryptMsg.model.*;
+import com.example.encryptMsg.payload.CreateMessageResponse;
 import com.example.encryptMsg.repository.*;
-import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-
+import jakarta.transaction.Transactional;
 import java.security.SecureRandom;
 import java.util.*;
 
@@ -12,110 +15,142 @@ import java.util.*;
 public class UserService {
     private final AccountRepo accountRepo;
     private final MessageRepo messageRepo;
-    private final EncryptionService encryptionService;
-
-    public UserService(AccountRepo accountRepo, MessageRepo messageRepo, EncryptionService encryptionService) {
-        this.accountRepo = accountRepo;
-        this.messageRepo = messageRepo;
-        this.encryptionService = encryptionService;
-    }
-
+    private final CryptographyToggle cryptographyToggle;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public void createAccount(String username, String password) {
+    public UserService(
+            AccountRepo accountRepo,
+            MessageRepo messageRepo,
+
+            /*
+            // the @Qualifier argument is "custom" by default.
+            // qualifier argument is "custom" --> my custom cryptography code is activated.
+            // qualifier argument is "compliant" --> library-based cryptography code is activated.
+             */
+            @Qualifier("custom") CryptographyToggle cryptographyToggle)
+    {
+        this.accountRepo = accountRepo;
+        this.messageRepo = messageRepo;
+        this.cryptographyToggle = cryptographyToggle;
+    }
+
+    public int createAccount(String username, char[] password, String ciphermode) throws Exception {
         byte[] passwordSalt = new byte[32];
-        secureRandom.nextBytes(passwordSalt);
         byte[] expansionSalt = new byte[32];
+        secureRandom.nextBytes(passwordSalt);
         secureRandom.nextBytes(expansionSalt);
-        byte[] passwordBytes = password.getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
-        Account newAccount = new Account(
-                username,
-                encryptionService.keySaltedStretch(passwordBytes, passwordBytes.length, passwordSalt),
-                passwordSalt,
-                expansionSalt
-        );
-        accountRepo.save(newAccount);
+        try {
+            Account newAccount = new Account(
+                    username,
+                    cryptographyToggle.passwordHashingSHA256(password, passwordSalt),
+                    passwordSalt,
+                    expansionSalt,
+                    ciphermode
+            );
+            accountRepo.save(newAccount);
+            return newAccount.getAccountId();
+        } finally {
+            Arrays.fill(password, '\0');
+        }
     }
+
     @Transactional
-    public boolean createMessage(String username, String messagePlaintext, String password) {
-        Optional<Account> accountOptional = findByUsername(username);
-        if (accountOptional.isEmpty()) {
-            return false;
+    public CreateMessageResponse createMessage(String username, char[] messagePlaintext, char[] password) throws Exception {
+        try {
+            Account account = accountRepo.findByUsername(username).orElse(null);
+            if (account == null || !cryptographyToggle.passwordCheck(password, account.getPasswordSalt(), account.getPasswordHash())) {
+                return null;
+            }
+            IV_and_Ciphertext result = cryptographyToggle.encryptionAES(
+                    messagePlaintext,
+                    password,
+                    account.getExpansionSalt(),
+                    account.getCiphermode()
+            );
+
+            Message newMessage = new Message(account, result.ciphertext(), result.iv());
+            messageRepo.save(newMessage);
+
+            return new CreateMessageResponse(account.getCiphermode(), newMessage.getMessageId());
+        } finally {
+            Arrays.fill(password, '\0');
+            Arrays.fill(messagePlaintext, '\0');
         }
-        Account account = accountOptional.get();
-
-        if (!passwordMatch(account, password)) return false;
-        byte[] initializationVector = new byte[12];
-        secureRandom.nextBytes(initializationVector);
-
-        byte[] masterKey = password.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        byte[] messageCiphertext = encryptionService.aes256encryptionGCM(
-                messagePlaintext.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-                encryptionService.rijndael256expansion(encryptionService.keySaltedStretch(masterKey, masterKey.length, account.getExpansionSalt())),
-                initializationVector
-        );
-        Message newMessage = new Message(account, messageCiphertext, initializationVector);
-        messageRepo.save(newMessage);
-        account.addToAssociatedMessagesList(newMessage);
-        return true;
     }
+
     @Transactional
-    public boolean deleteAccount(String username, String password) {
-        Optional<Account> accountOptional = findByUsername(username);
-        if (accountOptional.isEmpty()) {
-            return false;
-        }
-        Account account = accountOptional.get();
-        if (!passwordMatch(account, password)) return false;
-        accountRepo.delete(account);
-        return true;
-    }
-    public boolean passwordMatch(Account account, String password) {
-        byte[] passwordSalt = account.getPasswordSalt();
-        byte[] passwordBytes = password.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    public int deleteAccount(String username, char[] password) throws Exception {
+        try {
+            Account account = accountRepo.findByUsername(username).orElse(null);
 
-        return encryptionService.compareByteArrays_constantTime(
-                encryptionService.keySaltedStretch(passwordBytes, passwordBytes.length, passwordSalt),
-                account.getPasswordHash()
-        );
-    }
-    public Map<Integer, String> getAllStoredPlaintext_byAccount(Account account, String password) {
-        Map<Integer, String> map = new HashMap<>();
-        byte[] masterKey = password.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        int[] roundKeys = encryptionService.rijndael256expansion(encryptionService.keySaltedStretch(masterKey, masterKey.length, account.getExpansionSalt()));
-        for (Message message : messageRepo.findAllByAccount(account)) {
-            map.put(message.getMessageId(), encryptionService.aes256decryptionGCM(message.getMessageCiphertext(), roundKeys, message.getInitializationVector()));
+            if (account == null || !cryptographyToggle.passwordCheck(password, account.getPasswordSalt(), account.getPasswordHash())) {
+                return 0;
+            }
+
+            int accountId = account.getAccountId();
+            accountRepo.delete(account);
+            return accountId;
+        } finally {
+            Arrays.fill(password, '\0');
         }
-        return map;
-    }
-    public boolean deleteMessage(String username, int messageId, String password) {
-        Optional<Account> accountOptional = findByUsername(username);
-        if (accountOptional.isEmpty()) {
-            return false;
-        }
-        Account account = accountOptional.get();
-        if (!passwordMatch(account, password)) return false;
-        Message message = getMessageById(messageId);
-        if (message.getAccount().getAccountId() != account.getAccountId()) return false;
-        messageRepo.delete(message);
-        return true;
-    }
-    public Optional<Account> findByUsername(String username) {
-        return accountRepo.findByUsername(username);
     }
 
+    public Map<Integer, char[]> getAllStoredPlaintext_byAccount(String username, char[] password) throws Exception {
+        Map<Integer, char[]> mapToReturn = new HashMap<>();
+
+        try {
+            Account account = accountRepo.findByUsername(username).orElse(null);
+
+            if (account == null || !cryptographyToggle.passwordCheck(password, account.getPasswordSalt(), account.getPasswordHash())) {
+                return null;
+            }
+
+            for (Message message : messageRepo.findAllByAccount(account)) {
+                char[] plaintextChars = cryptographyToggle.decryptionAES(
+                        message.getMessageCiphertext(),
+                        message.getInitializationVector(),
+                        password,
+                        account.getExpansionSalt(),
+                        account.getCiphermode()
+                );
+                mapToReturn.put(message.getMessageId(), plaintextChars);
+            }
+
+            return mapToReturn;
+        } finally {
+            Arrays.fill(password, '\0');
+        }
+    }
+
+    @Transactional
+    public boolean deleteMessage(String username, int messageId, char[] password) throws Exception {
+        try {
+            Account account = accountRepo.findByUsername(username).orElse(null);
+
+            if (account == null || !cryptographyToggle.passwordCheck(password, account.getPasswordSalt(), account.getPasswordHash())) {
+                return false;
+            }
+            Message message = getMessageById(messageId);
+
+            if (message.getAccount().getAccountId() != account.getAccountId()) {
+                return false;
+            }
+
+            messageRepo.delete(message);
+            return true;
+        } finally {
+            Arrays.fill(password, '\0');
+        }
+    }
 
     public Message getMessageById(int messageId) {
-        Optional<Message> messageStoredOptional = messageRepo.findById(messageId);
-        return messageStoredOptional
+        return messageRepo.findById(messageId)
                 .orElseThrow(() -> new NoSuchElementException("Message not found with ID " + messageId + "."));
     }
     /*
-    public Account getAccountById(int accountId) {
-        Optional<Account> accountOptional = accountRepo.findById(accountId);
-        return accountOptional
-                .orElseThrow(() -> new NoSuchElementException("Account not found with ID " + accountId + "."));
+    public Optional<Account> findByUsername(String username) {
+        return accountRepo.findByUsername(username);
     }
-    */
+     */
 }
