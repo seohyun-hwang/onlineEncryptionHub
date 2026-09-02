@@ -85,10 +85,12 @@ FIPS 197 (AES): https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf
 
 FIPS PUB 180-4 (SHA): https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
 
+SP 800-38A (CBC): https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf
+
 SP 800-38D (GCM): https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf
 
 FIPS PUB 198-1 (HMAC): https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.198-1.pdf
 
-Special Publication 800-132 (PBKDF and salting): https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
+SP 800-132 (PBKDF and salting): https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
 
 CMVP Overview Page (advice against custom-rolled cryptography): https://csrc.nist.gov/projects/cryptographic-module-validation-program
