@@ -1,6 +1,7 @@
 package com.example.encryptMsg.cryptography;
 
 // provides flexibility for toggling between compliant (library-based) and custom (manually coded) cryptography processes
+// 2 implementors: EncryptionCompliant and EncryptionCustom
 public interface CryptographyToggle {
     byte[] passwordHashingSHA256(char[] password, byte[] salt) throws Exception;
 

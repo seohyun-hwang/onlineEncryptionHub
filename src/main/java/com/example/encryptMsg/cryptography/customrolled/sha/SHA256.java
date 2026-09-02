@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 
-// inherited by AesGeneralCrypto, which itself has 2 inheritors
+// inherited by AES256Universal, which itself has 2 inheritors
 @Service
 public class SHA256 {
     // SHA-256 (public) and HMAC-SHA-256 (public)

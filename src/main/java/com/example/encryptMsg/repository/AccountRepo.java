@@ -12,7 +12,7 @@ public interface AccountRepo extends JpaRepository<Account, Integer> {
     /*
     SQL prompt idea: get all account-data that corresponds to a specific username.
 
-    SELECT account_id, username, password_hash, password_salt, expansion_salt, associated_messages_list
+    SELECT account_id, username, password_hash, password_salt, expansion_salt, ciphermode, associated_messages_list
     FROM message
     WHERE username = ?;
      */

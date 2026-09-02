@@ -11,6 +11,7 @@ public class AES256Universal {
     // salted PBKDF2 key-stretching (public), salted Rijndael key-expansion (public)
     // Rijndael encryption (protected), Rijndael decryption (protected)
     // constant-time array comparison (public)
+    // 2 inheritors: AES256CBC and AES256GCM
 
     private final SHA256 sha256;
 

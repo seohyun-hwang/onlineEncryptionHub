@@ -9,10 +9,10 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int messageId;
     @ManyToOne
-    @JoinColumn(name = "account_id")
+    @JoinColumn(name = "account_id") // the "account" field is stored as its reference-identifier "account_id".
     private Account account; // the account that sent this message
     @Lob
-    @Column(columnDefinition = "BLOB") // or whatever makes sense for your intended message size
+    @Column(columnDefinition = "BLOB")
     private byte[] messageCiphertext; // [AES, masterKey: password] for storage
     private byte[] initializationVector; // AES-GCM or AES-CBC; either way, the iv/nonce is unique to each message.
 
