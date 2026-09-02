@@ -37,7 +37,7 @@ As already mentioned at the top, I therefore added a fully library-based version
 
 Additional protection implemented against:
 1. Timing attacks 
-   1. Solution: constant-time array comparison
+   1. Solution: constant-time array comparison found in `cryptography/customrolled/AES256Universal.java`
 3. Man-in-the-middle attacks
    1. Solution: cipher modes (AES-GCM and AES-CBC)
    2. Tested in `src/test/java/com.example.encryptMsg/crackingTests`
@@ -52,10 +52,11 @@ Additional protection implemented against:
    1. Solution: PBKDF2 key-stretching with HMAC-SHA256
 5. Time-of-check to Time-of-use race-condition
    1. Solution: immediately using system-state upon access and implementing a global exception handler for the case that the state does not exist
+   2. See global exception handler in `java/com.example/encryptMsg/controller/GlobalExceptionHandler.java`
 6. String literals are not cleared readily by Java's garbage collector
    1. Solution: accepting sensitive data from the frontend, incl. password and message-plaintext, as character-arrays instead of Strings
 6. SpringBoot's JSON parser "Jackson" parses text-inputs as Strings by default
-   1. Solution: implement a class `CharArrDeserialization` which overrides Jackson's deserialization process to parse texts as char-arrays
+   1. Solution: implemented a class `java/com.example.encryptMsg/config/CharArrDeserialization.java` which overrides Jackson's deserialization process to parse texts as char-arrays
 
 All Rest API communication to the frontend is found in `src/main/java/controller/UserController.java`.
 
