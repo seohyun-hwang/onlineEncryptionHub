@@ -1,8 +1,8 @@
 Disclaimer: Cryptographic algorithms are built completely from scratch purely for self-educational purposes. Not for production use!!!
 
-Since custom-rolled cryptography is unprofessional, I also included a fully library-based version of the cryptography in `src/main/java/EncryptionCompliant.java`. The custom version is in `EncryptionCustom.java`.
+Since custom-rolled cryptography is unprofessional, I also included a fully library-based version of the cryptography in `src/main/java/com.example.encryptMsg/cryptogrpahy/EncryptionCompliant.java`. The custom version is in `EncryptionCustom.java`.
 
-To toggle from the custom-rolled version to the library-based version, go to `src/main/java/service/UserService.java`, then find the class constructor and edit `@Qualifier("custom")` to `@Qualifier("compliant")`.
+To toggle from the custom-rolled version to the library-based version, go to `src/main/java/com.example.encryptMsg/service/UserService.java`, then find the class constructor and edit `@Qualifier("custom")` to `@Qualifier("compliant")`.
 
 ## Running the project
 This is a fullstack application; the backend and frontend must be run simultaneously. The project files include both the frontend and backend.
@@ -24,16 +24,16 @@ Features:
 2. Delete account (eradication of all account data)
 3. Create message (AES-256-GCM or AES-256-CBC message encryption depending on user-choice)
 4. Delete message (eradiation of all message data)
-5. Show all messages upon login (AES-256-GCM message decryption)
+5. Show all messages upon login (AES-256-GCM/CBC message decryption)
 
 Your text-entries are encrypted using Rijndael AES-256 cryptography with Galois Counter Mode (GCM) or Cipher Block Chaining (CBC) based on your choice during account creation.
 Your password is encrypted using a one-way SHA-256 hashing algorithm.
 Passwords are salted and stretched using PBKDF2 (implements HMAC-SHA256).
 
 My core cryptographic algorithms (PBKDF2, SHA-256, AES-256-GCM) are ***fully custom-rolled*** with no use of cipher libraries.
-While custom-rolled cryptography is unprofessional, highly vulnerable to side-channel attacks, and doesn't take advantage of hardware optimizations, I believed it to be worth the practice. The code for all my cryptography is found in `src/main/java/service/EncryptionService.java`.
+While custom-rolled cryptography is unprofessional, highly vulnerable to side-channel attacks, and doesn't take advantage of hardware optimizations, I believed it to be worth the practice. The code for all my custom cryptography is found in `src/main/java/com.example.encryptMsg/cryptography/EncryptionCustom.java`.
 
-As already mentioned at the top, I therefore added a fully library-based version of the cryptography in `src/main/java/EncryptionCompliant.java`.
+As already mentioned at the top, I therefore added a fully library-based version of the cryptography in `cryptography/EncryptionCompliant.java`.
 
 Additional protection implemented against:
 1. Timing attacks 
