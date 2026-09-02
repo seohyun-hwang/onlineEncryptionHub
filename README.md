@@ -55,8 +55,8 @@ Additional protection implemented against:
    2. See global exception handler in `java/com.example.encryptMsg/GlobalExceptionHandler.java`
 6. String literals are not cleared readily by Java's garbage collector
    1. Solution: accepting sensitive data from the frontend, incl. password and message-plaintext, as character-arrays instead of Strings
-2. Sensitive data just remains in memory generally until cleared by Java's garbage collector
-   3. Solution: filling arrays with 0s as soon as they are no longer needed
+2. Sensitive data generally remains in main-memory for quite some time until cleared by Java's garbage collector.
+   1. Solution: filling arrays with 0s as soon as they are no longer needed
 6. SpringBoot's JSON parser "Jackson" parses text-inputs as Strings by default
    1. Solution: implemented a class `java/com.example.encryptMsg/config/CharArrDeserialization.java` which overrides Jackson's deserialization process to parse texts as char-arrays
 
