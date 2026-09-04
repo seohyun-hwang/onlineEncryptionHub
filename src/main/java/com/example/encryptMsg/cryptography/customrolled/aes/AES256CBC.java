@@ -2,6 +2,8 @@ package com.example.encryptMsg.cryptography.customrolled.aes;
 
 import com.example.encryptMsg.cryptography.customrolled.AES256Universal;
 import com.example.encryptMsg.cryptography.customrolled.sha.SHA256;
+import jdk.incubator.vector.ByteVector;
+import jdk.incubator.vector.VectorOperators;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -16,7 +18,7 @@ public class AES256CBC extends AES256Universal {
     private byte[] paddingPKCS7(byte[] unpaddedBytes) {
         byte[] paddedBytes;
         int plaintextLength = unpaddedBytes.length;
-        int plaintextRemainder = 16 - (plaintextLength % 16);
+        int plaintextRemainder = 16 - (plaintextLength & 15);
         paddedBytes = new byte[plaintextLength + plaintextRemainder];
         System.arraycopy(unpaddedBytes, 0, paddedBytes, 0, unpaddedBytes.length);
         for (int byteIndex = unpaddedBytes.length; byteIndex < paddedBytes.length; byteIndex++) {
@@ -28,50 +30,62 @@ public class AES256CBC extends AES256Universal {
         byte[] plaintextBytesPadded = paddingPKCS7(plaintextBytesUnpadded);
 
         byte[][] plaintext16ByteBlocks = new byte[plaintextBytesPadded.length / 16][16];
-        for (int i = 0; i < plaintextBytesPadded.length; i++) {
-            plaintext16ByteBlocks[i/16][i%16] = plaintextBytesPadded[i];
+        for (int i = 0; i < plaintext16ByteBlocks.length; i++) {
+            ByteVector.fromArray(vectorSpecies_block128bit, plaintextBytesPadded, i * 16)
+                    .intoArray(plaintext16ByteBlocks[i], 0);
         }
 
         byte[] cipherblockPrev = iv;
         for (int i = 0; i < plaintext16ByteBlocks.length; i++) {
-            for (int k = 0; k < 16; k++) {
-                plaintext16ByteBlocks[i][k] ^= cipherblockPrev[k];
-            }
+            ByteVector.fromArray(
+                            vectorSpecies_block128bit,
+                            plaintext16ByteBlocks[i],
+                            0
+                    )
+                    .lanewise( // parallel XOR
+                            VectorOperators.XOR,
+                            ByteVector.fromArray(vectorSpecies_block128bit, cipherblockPrev, 0)
+                    )
+                    .intoArray(plaintext16ByteBlocks[i], 0);
 
             plaintext16ByteBlocks[i] = rijndael256encrypt(plaintext16ByteBlocks[i], expansionArr);
             cipherblockPrev = plaintext16ByteBlocks[i];
         }
 
         for (int i = 0; i < plaintext16ByteBlocks.length; i++) {
-            for (int k = 0; k < 16; k++) {
-                plaintextBytesPadded[16*i + k] = plaintext16ByteBlocks[i][k];
-            }
+            ByteVector.fromArray(vectorSpecies_block128bit, plaintext16ByteBlocks[i], 0)
+                    .intoArray(plaintextBytesPadded, 16*i);
         }
 
         return plaintextBytesPadded;
     }
     public char[] aes256decryptionCBC(byte[] ciphertextInput, int[] expansionArr, byte[] iv) {
-
         byte[][] ciphertext16ByteBlocks = new byte[ciphertextInput.length / 16][16];
-        for (int i = 0; i < ciphertextInput.length; i++) {
-            ciphertext16ByteBlocks[i/16][i%16] = ciphertextInput[i];
+        for (int i = 0, blockIndex = 0; i < ciphertextInput.length; i += 16, blockIndex++) {
+            ByteVector.fromArray(vectorSpecies_block128bit, ciphertextInput, i)
+                    .intoArray(ciphertext16ByteBlocks[blockIndex], 0);
         }
 
         byte[] cipherblockPrev = iv;
         for (int i = 0; i < ciphertext16ByteBlocks.length; i++) {
-            byte[] cipherblockPresent = ciphertext16ByteBlocks[i].clone();
-            byte[] plaintextBlock = rijndael256decrypt(ciphertext16ByteBlocks[i], expansionArr);
-            for (int k = 0; k < 16; k++) {
-                ciphertext16ByteBlocks[i][k] = (byte) (plaintextBlock[k] ^ cipherblockPrev[k]);
-            }
-            cipherblockPrev = cipherblockPresent;
+            byte[] cache_cipherblockPresent = ciphertext16ByteBlocks[i].clone();
+            ByteVector.fromArray(
+                            vectorSpecies_block128bit,
+                            rijndael256decrypt(ciphertext16ByteBlocks[i], expansionArr),
+                            0
+                    )
+                    .lanewise( // parallel XOR
+                            VectorOperators.XOR,
+                            ByteVector.fromArray(vectorSpecies_block128bit, cipherblockPrev, 0)
+                    )
+                    .intoArray(ciphertext16ByteBlocks[i], 0);
+            cipherblockPrev = cache_cipherblockPresent;
         }
 
         byte[] returnedPlaintext = ciphertextInput.clone();
         for (int i = 0; i < ciphertext16ByteBlocks.length; i++) {
-            for (int k = 0; k < 16; k++) {
-                returnedPlaintext[16*i + k] = ciphertext16ByteBlocks[i][k];
-            }
+            ByteVector.fromArray(vectorSpecies_block128bit, ciphertext16ByteBlocks[i], 0)
+                    .intoArray(returnedPlaintext, 16 * i);
         }
 
 

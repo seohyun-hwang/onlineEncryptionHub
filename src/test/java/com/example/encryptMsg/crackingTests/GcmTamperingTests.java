@@ -42,7 +42,7 @@ public class GcmTamperingTests {
 
         IV_and_Ciphertext encryptedData = encryptionCustom.encryptionAES(plaintext, password, expansionSalt, "GCM");
         byte[] tamperedCiphertext = encryptedData.ciphertext().clone();
-        tamperedCiphertext[0] ^= 0x01; // Flip the first bit
+        tamperedCiphertext[0] ^= 0x01; // Flipping the first bit
 
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             encryptionCustom.decryptionAES(tamperedCiphertext, encryptedData.iv(), password, expansionSalt, "GCM");

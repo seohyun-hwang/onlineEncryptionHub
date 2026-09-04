@@ -16,7 +16,7 @@ public class UserService {
     private final AccountRepo accountRepo;
     private final MessageRepo messageRepo;
     private final CryptographyToggle cryptographyToggle;
-    private final SecureRandom secureRandom = new SecureRandom();
+    private static final SecureRandom secureRandom = new SecureRandom();
 
     public UserService(
             AccountRepo accountRepo,

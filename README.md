@@ -15,9 +15,11 @@ Ports: http://localhost:8080/ for backend; http://localhost:5173/ for frontend.
 
 ## Basic project information
 
-This project was done for self-study on cryptographic algorithms, bitwise operations, finite-field arithmetic in GF(2^8) and GF(2^128), SpringBoot, Rest API, loosely-coupled strategy patterns, database interaction, unit-test writing, and UI/UX integration with ReactJS frontend.
+This project was done for self-study on cryptographic algorithms, bitwise operations, branchless constant-time finite-field arithmetic in GF(2^8) and GF(2^128), SpringBoot, Rest API, system design, database interaction, unit-test writing, and UI/UX integration with ReactJS frontend.
 
 The application asks you to create an account with a username and password, after which it lets you store encrypted text-entries in a database (which is cleared as soon as the backend program is terminated).
+
+This program takes advantage of Java Project Panama (incl. Vector API and MemorySegment).
 
 Features:
 1. Create account (SHA-256 password hashing)
@@ -69,11 +71,11 @@ All Rest API communication to the frontend is found in `src/main/java/controller
 All unit-tests are found in `src/test/java/com.example.encryptMsg/`. Mockito is the mocking framework used in `UserControllerTest.java` and `UserServiceTest.java`.
 
 ### Backend development tools
-Java 21, SpringBoot 4.1.0, Maven 4.0.0, Jar packaging, Properties configuration
+Java 24, SpringBoot 4.1.0, Maven 4.0.0, Jar packaging, Properties configuration
 
 Key dependencies: Spring Web, Spring Boot DevTools, Spring Data JPA, Spring Web MVC, H2 Database
 
-Key plugins: Eirslett Frontend Maven 1.15.1, Maven Resources node 20.11.0 npm 10.2.4
+Key plugins: Maven Compiler Plugin, Maven Surefire Plugin, Eirslett Frontend Maven 1.15.1, Maven Resources node 20.11.0 npm 10.2.4
 
 ### Frontend development tools
 TypeScript 6.0.2, React 19.2.8, Vite 8.2.2

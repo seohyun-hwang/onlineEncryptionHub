@@ -2,14 +2,20 @@ import React, { useState } from 'react';
 import { API_BASE_URL, type Status } from '../Types';
 import { StatusMessage, useStatusTimer, clearPassword } from '../Utils';
 
-export function CreateMessage() {
+interface CreateAccountProps {
+  status: Status;
+  setStatus: React.Dispatch<React.SetStateAction<Status>>;
+}
+
+export function CreateMessage({ setGlobalStatusLoading }: CreateAccountProps) {
   const [status, setStatus] = useState<Status>({ type: '', msg: '' });
 
-  useStatusTimer(status, setStatus);
+  useStatusTimer(5000, status, setStatus);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus({ type: 'loading', msg: 'Encrypting and saving...' });
+    setGlobalStatusLoading(true);
 
     const form = e.currentTarget;
     const payload = Object.fromEntries(new FormData(form).entries());
@@ -35,6 +41,7 @@ export function CreateMessage() {
       setStatus({ type: 'error', msg: 'Cannot connect to server.' });
     } finally {
       clearPassword(form);
+      setGlobalStatusLoading(false);
     }
   };
 
@@ -56,7 +63,7 @@ export function CreateMessage() {
   );
 }
 
-export function FetchMessages() {
+export function FetchMessages({ setGlobalStatusLoading }: CreateAccountProps) {
   const [status, setStatus] = useState<Status>({ type: '', msg: '' });
   const [messages, setMessages] = useState<Record<number, string>>({});
 
@@ -64,6 +71,7 @@ export function FetchMessages() {
     e.preventDefault();
     setStatus({ type: 'loading', msg: 'Fetching and decrypting...' });
     setMessages({});
+    setGlobalStatusLoading(true);
 
     const form = e.currentTarget;
     const payload = Object.fromEntries(new FormData(form).entries());
@@ -78,7 +86,9 @@ export function FetchMessages() {
       if (response.ok) {
         const data: Record<number, string> = await response.json();
         setMessages(data);
-        setStatus({ type: 'success', msg: `Decrypted ${Object.keys(data).length} messages.` });
+        const messageLength = Object.keys(data).length;
+        if (messageLength === 1) setStatus({ type: 'success', msg: `Decrypted 1 message.` });
+        else setStatus({ type: 'success', msg: `Decrypted ${messageLength} messages.` });
       } else if (response.status === 401) {
         setStatus({ type: 'error', msg: 'Invalid credentials.' });
       } else {
@@ -88,6 +98,7 @@ export function FetchMessages() {
       setStatus({ type: 'error', msg: 'Cannot connect to server.' });
     } finally {
       clearPassword(form);
+      setGlobalStatusLoading(false);
     }
   };
 
@@ -117,14 +128,15 @@ export function FetchMessages() {
   );
 }
 
-export function DeleteMessage() {
+export function DeleteMessage({ setGlobalStatusLoading }: CreateAccountProps) {
   const [status, setStatus] = useState<Status>({ type: '', msg: '' });
 
-  useStatusTimer(status, setStatus);
+  useStatusTimer(5000, status, setStatus);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus({ type: 'loading', msg: 'Pulverizing message data...' });
+    setGlobalStatusLoading(true);
 
     const form = e.currentTarget;
     const payload = Object.fromEntries(new FormData(form).entries());
@@ -153,6 +165,7 @@ export function DeleteMessage() {
       setStatus({ type: 'error', msg: 'Cannot connect to server.' });
     } finally {
       clearPassword(form);
+      setGlobalStatusLoading(false);
     }
   };
 

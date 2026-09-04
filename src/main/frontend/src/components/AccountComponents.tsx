@@ -2,15 +2,21 @@ import React, { useState } from 'react';
 import { API_BASE_URL, type Status } from '../Types';
 import { StatusMessage, useStatusTimer, clearPassword } from '../Utils';
 
-export function CreateAccount() {
+interface CreateAccountProps {
+  status: Status;
+  setStatus: React.Dispatch<React.SetStateAction<Status>>;
+}
+
+export function CreateAccount({ setGlobalStatusLoading }: CreateAccountProps) {
   const [status, setStatus] = useState<Status>({ type: '', msg: '' });
   const [cipherModeFrontend, setCipherModeFrontend] = useState<'GCM' | 'CBC'>('GCM');
 
-  useStatusTimer(status, setStatus);
+  useStatusTimer(5000, status, setStatus);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus({ type: 'loading', msg: 'Creating and storing account...' });
+    setGlobalStatusLoading(true);
 
     const form = e.currentTarget;
     const formData = new FormData(form);
@@ -42,6 +48,7 @@ export function CreateAccount() {
       setStatus({ type: 'error', msg: 'Cannot connect to server.' });
     } finally {
       clearPassword(form);
+      setGlobalStatusLoading(false);
     }
   };
 
@@ -63,7 +70,7 @@ export function CreateAccount() {
             >
               AES-256-GCM
               <br />
-              (Preferred)
+              (Recommended)
             </button>
             <button
               type="button"
@@ -87,16 +94,17 @@ export function CreateAccount() {
   );
 }
 
-export function DeleteAccount() {
+export function DeleteAccount({ setGlobalStatusLoading }: CreateAccountProps) {
   const [status, setStatus] = useState<Status>({ type: '', msg: '' });
 
-  useStatusTimer(status, setStatus);
+  useStatusTimer(5000, status, setStatus);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!window.confirm("Are you sure? This action wipes out all your stored messages!")) return;
 
     setStatus({ type: 'loading', msg: 'Crushing account data...' });
+    setGlobalStatusLoading(true);
     const form = e.currentTarget;
     const payload = Object.fromEntries(new FormData(form).entries());
 
@@ -120,6 +128,7 @@ export function DeleteAccount() {
       setStatus({ type: 'error', msg: 'Cannot connect to server.' });
     } finally {
       clearPassword(form);
+      setGlobalStatusLoading(false);
     }
   };
 

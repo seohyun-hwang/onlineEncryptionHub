@@ -3,6 +3,15 @@ package com.example.encryptMsg.cryptography.customrolled;
 import com.example.encryptMsg.cryptography.customrolled.sha.SHA256;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import jdk.incubator.vector.ByteVector;
+import jdk.incubator.vector.VectorSpecies;
+import jdk.incubator.vector.VectorOperators;
+
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.CharBuffer;
 
 
 @Service
@@ -14,12 +23,15 @@ public class AES256Universal {
     // 2 inheritors: AES256CBC and AES256GCM
 
     private final SHA256 sha256;
+    // ValueLayout is little-Endian by default, so it must be clarified to big-Endian.
+    protected static final ValueLayout.OfLong longLayout_bigEndian = ValueLayout.JAVA_LONG_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN);
+    protected static final VectorSpecies<Byte> vectorSpecies_block128bit = ByteVector.SPECIES_128;
 
     public AES256Universal(SHA256 sha256) {
         this.sha256 = sha256;
     }
 
-    private final short[] rijndaelSBOX = new short[]{
+    private static final int[] rijndaelSBOX = new int[]{
             0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
             0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
             0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
@@ -39,7 +51,7 @@ public class AES256Universal {
     };
 
     // Inverse operations are only needed in CBC mode.
-    private final short[] rijndaelInverseSBOX = new short[]{
+    private static final int[] rijndaelInverseSBOX = new int[]{
             0x52,0x09,0x6a,0xd5,0x30,0x36,0xa5,0x38,0xbf,0x40,0xa3,0x9e,0x81,0xf3,0xd7,0xfb,
             0x7c,0xe3,0x39,0x82,0x9b,0x2f,0xff,0x87,0x34,0x8e,0x43,0x44,0xc4,0xde,0xe9,0xcb,
             0x54,0x7b,0x94,0x32,0xa6,0xc2,0x23,0x3d,0xee,0x4c,0x95,0x0b,0x42,0xfa,0xc3,0x4e,
@@ -58,7 +70,7 @@ public class AES256Universal {
             0x17,0x2b,0x04,0x7e,0xba,0x77,0xd6,0x26,0xe1,0x69,0x14,0x63,0x55,0x21,0x0c,0x7d
     };
 
-    private final int[] rijndaelRoundConstants = {
+    private static final int[] rijndaelRoundConstants = {
             0x00000000,
             0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000,
             0x20000000, 0x40000000, 0x80000000, 0x1B000000, 0x36000000
@@ -89,100 +101,127 @@ public class AES256Universal {
 
         byte[] hmacProcessed = sha256.hmacSha256(innerKeyPadding, outerKeyPadding, salt);
         byte[] accumulatorToReturn = hmacProcessed.clone();
+        MemorySegment segment_accumulatorToReturn = MemorySegment.ofArray(accumulatorToReturn);
+
 
         for (int iteration = 0; iteration < 600000; iteration++) {
             hmacProcessed = sha256.hmacSha256(innerKeyPadding, outerKeyPadding, hmacProcessed);
-            for (int byteIndex = 0; byteIndex < 32; byteIndex++) {
-                accumulatorToReturn[byteIndex] ^= hmacProcessed[byteIndex];
-            }
+            MemorySegment cacheSegment_hmacProcessed = MemorySegment.ofArray(hmacProcessed);
+
+            segment_accumulatorToReturn.set(
+                    longLayout_bigEndian, 0,
+                    segment_accumulatorToReturn.get(longLayout_bigEndian, 0) ^ cacheSegment_hmacProcessed.get(longLayout_bigEndian, 0)
+            );
+            segment_accumulatorToReturn.set(
+                    longLayout_bigEndian, 0,
+                    segment_accumulatorToReturn.get(longLayout_bigEndian, 8) ^ cacheSegment_hmacProcessed.get(longLayout_bigEndian, 8)
+            );
+            segment_accumulatorToReturn.set(
+                    longLayout_bigEndian, 0,
+                    segment_accumulatorToReturn.get(longLayout_bigEndian, 16) ^ cacheSegment_hmacProcessed.get(longLayout_bigEndian, 16)
+            );
+            segment_accumulatorToReturn.set(
+                    longLayout_bigEndian, 0,
+                    segment_accumulatorToReturn.get(longLayout_bigEndian, 24) ^ cacheSegment_hmacProcessed.get(longLayout_bigEndian, 24)
+            );
         }
         return accumulatorToReturn;
     }
     public byte[] charToByteArr(char[] input) {
-        if (input == null) return new byte[0];
-        byte[] splitToReturn = new byte[input.length * 2];
-        for (int i = 0; i < input.length; i++) {
-            splitToReturn[i*2] = (byte)(input[i] >>> 8);
-            splitToReturn[i*2 + 1] = (byte)(input[i]);
-        }
-        return splitToReturn;
+        if (input == null || input.length == 0) return new byte[0];
+        ByteBuffer byteBuffer = ByteBuffer.allocate(input.length * 2)
+                .order(ByteOrder.BIG_ENDIAN);
+        byteBuffer.asCharBuffer().put(input);
+        return byteBuffer.array();
     }
     public char[] byteToCharArr(byte[] input) {
-        if (input == null) return new char[0];
-        char[] concatToReturn = new char[input.length / 2];
-        for (int i = 0; i < concatToReturn.length; i++) {
-            concatToReturn[i] = (char) (((input[i*2] & 0xFF) << 8) | (input[i*2 + 1] & 0xFF));
-        }
-        return concatToReturn;
+        if (input == null || input.length == 0) return new char[0];
+        CharBuffer charBuffer = ByteBuffer.wrap(input).order(ByteOrder.BIG_ENDIAN).asCharBuffer();
+        char[] result = new char[charBuffer.remaining()];
+        charBuffer.get(result);
+        return result;
     }
 
-    // finite-field multiplication in GF(2^8)
+    // branchless constant-time finite-field multiplication in GF(2^8)
     private int galoisMultiplyGF2_8(int operand1, int operand2) {
         int productAccumulator = 0;
         for (int i = 0; i < 8; i++) {
-            if ((operand2 & 1) != 0) {
-                productAccumulator ^= operand1;
-            }
-            boolean willOverflow = (operand1 & 0x80) != 0;
-            operand1 <<= 1;
-            if (willOverflow) {
-                // multiply operand1 by GF(2^8) polynomial 0x11b until it is certainly within the Galois field.
-                operand1 ^= 0x11b;
-            }
+            // every time a 1-bit is found in operand2, XORing the product with the proper shift of operand1 will function as addition.
+            productAccumulator ^= operand1 & -(operand2 & 1); // the two's complement of -1 is all 1s; the two's complement of 0 is all 0s.
+            int maskBinary_all1ifOverflow = -(operand1 & 0x80);
+            operand1 <<= 1; // Multiplying operand1 by 2, which translates to left shift of operand1 by 1 bit
+            // multiply operand1 by GF(2^8) polynomial 0x11b until it is certainly within the Galois field.
+            operand1 ^= 0x11b & maskBinary_all1ifOverflow;
             operand2 >>= 1;
         }
         return productAccumulator & 0xFF;
     }
 
-    private int subByte(int input, boolean inverse) {
+    private int subByte(int input) {
         int concatToReturn = 0;
-        short[] sboxChosen = inverse ? rijndaelInverseSBOX : rijndaelSBOX;
-
         for (int i = 0; i < 4; i++) {
             int bite = (input >>> (i * 8)) & 0xFF;
-            concatToReturn |= sboxChosen[bite] << (i * 8);
+            concatToReturn |= rijndaelSBOX[bite] << (i * 8);
         }
         return concatToReturn; // input 4 bytes; output 4 bytes
     }
-    private void shiftRows(int[] operand, boolean inverse) {
+    private int subByteInverse(int input) {
+        int concatToReturn = 0;
+        for (int i = 0; i < 4; i++) {
+            int bite = (input >>> (i * 8)) & 0xFF;
+            concatToReturn |= rijndaelInverseSBOX[bite] << (i * 8);
+        }
+        return concatToReturn; // input 4 bytes; output 4 bytes
+    }
+    private void shiftRows(int[] operand) {
         int column0 = operand[0];
         int column1 = operand[1];
         int column2 = operand[2];
         int column3 = operand[3];
-
-        if (!inverse) {
-            operand[0] = (column0 & 0xFF000000) | (column1 & 0x00FF0000) | (column2 & 0x0000FF00) | (column3 & 0x000000FF);
-            operand[1] = (column1 & 0xFF000000) | (column2 & 0x00FF0000) | (column3 & 0x0000FF00) | (column0 & 0x000000FF);
-            operand[2] = (column2 & 0xFF000000) | (column3 & 0x00FF0000) | (column0 & 0x0000FF00) | (column1 & 0x000000FF);
-            operand[3] = (column3 & 0xFF000000) | (column0 & 0x00FF0000) | (column1 & 0x0000FF00) | (column2 & 0x000000FF);
-        } else {
-            operand[0] = (column0 & 0xFF000000) | (column3 & 0x00FF0000) | (column2 & 0x0000FF00) | (column1 & 0x000000FF);
-            operand[1] = (column1 & 0xFF000000) | (column0 & 0x00FF0000) | (column3 & 0x0000FF00) | (column2 & 0x000000FF);
-            operand[2] = (column2 & 0xFF000000) | (column1 & 0x00FF0000) | (column0 & 0x0000FF00) | (column3 & 0x000000FF);
-            operand[3] = (column3 & 0xFF000000) | (column2 & 0x00FF0000) | (column1 & 0x0000FF00) | (column0 & 0x000000FF);
-        }
+        operand[0] = (column0 & 0xFF000000) | (column1 & 0x00FF0000) | (column2 & 0x0000FF00) | (column3 & 0x000000FF);
+        operand[1] = (column1 & 0xFF000000) | (column2 & 0x00FF0000) | (column3 & 0x0000FF00) | (column0 & 0x000000FF);
+        operand[2] = (column2 & 0xFF000000) | (column3 & 0x00FF0000) | (column0 & 0x0000FF00) | (column1 & 0x000000FF);
+        operand[3] = (column3 & 0xFF000000) | (column0 & 0x00FF0000) | (column1 & 0x0000FF00) | (column2 & 0x000000FF);
     }
-    private void mixColumns(int[] operand, boolean inverse) {
+    private void shiftRowsInverse(int[] operand) {
+        int column0 = operand[0];
+        int column1 = operand[1];
+        int column2 = operand[2];
+        int column3 = operand[3];
+        operand[0] = (column0 & 0xFF000000) | (column3 & 0x00FF0000) | (column2 & 0x0000FF00) | (column1 & 0x000000FF);
+        operand[1] = (column1 & 0xFF000000) | (column0 & 0x00FF0000) | (column3 & 0x0000FF00) | (column2 & 0x000000FF);
+        operand[2] = (column2 & 0xFF000000) | (column1 & 0x00FF0000) | (column0 & 0x0000FF00) | (column3 & 0x000000FF);
+        operand[3] = (column3 & 0xFF000000) | (column2 & 0x00FF0000) | (column1 & 0x0000FF00) | (column0 & 0x000000FF);
+    }
+    private void mixColumns(int[] operand) {
         for (int i = 0; i < 4; i++) {
             int column = operand[i];
-
             int byte0 = (column >>> 24) & 0xFF;
             int byte1 = (column >>> 16) & 0xFF;
             int byte2 = (column >>> 8) & 0xFF;
             int byte3 = column & 0xFF;
 
             int[] output = new int[4];
-            if (!inverse) {
-                output[0] = galoisMultiplyGF2_8(byte0, 2) ^ galoisMultiplyGF2_8(byte1, 3) ^ byte2 ^ byte3;
-                output[1] = byte0 ^ galoisMultiplyGF2_8(byte1, 2) ^ galoisMultiplyGF2_8(byte2, 3) ^ byte3;
-                output[2] = byte0 ^ byte1 ^ galoisMultiplyGF2_8(byte2, 2) ^ galoisMultiplyGF2_8(byte3, 3);
-                output[3] = galoisMultiplyGF2_8(byte0, 3) ^ byte1 ^ byte2 ^ galoisMultiplyGF2_8(byte3, 2);
-            } else {
-                output[0] = galoisMultiplyGF2_8(byte0, 14) ^ galoisMultiplyGF2_8(byte1, 11) ^ galoisMultiplyGF2_8(byte2, 13) ^ galoisMultiplyGF2_8(byte3, 9);
-                output[1] = galoisMultiplyGF2_8(byte0, 9) ^ galoisMultiplyGF2_8(byte1, 14) ^ galoisMultiplyGF2_8(byte2, 11) ^ galoisMultiplyGF2_8(byte3, 13);
-                output[2] = galoisMultiplyGF2_8(byte0, 13) ^ galoisMultiplyGF2_8(byte1, 9) ^ galoisMultiplyGF2_8(byte2, 14) ^ galoisMultiplyGF2_8(byte3, 11);
-                output[3] = galoisMultiplyGF2_8(byte0, 11) ^ galoisMultiplyGF2_8(byte1, 13) ^ galoisMultiplyGF2_8(byte2, 9) ^ galoisMultiplyGF2_8(byte3, 14);
-            }
+            output[0] = galoisMultiplyGF2_8(byte0, 2) ^ galoisMultiplyGF2_8(byte1, 3) ^ byte2 ^ byte3;
+            output[1] = byte0 ^ galoisMultiplyGF2_8(byte1, 2) ^ galoisMultiplyGF2_8(byte2, 3) ^ byte3;
+            output[2] = byte0 ^ byte1 ^ galoisMultiplyGF2_8(byte2, 2) ^ galoisMultiplyGF2_8(byte3, 3);
+            output[3] = galoisMultiplyGF2_8(byte0, 3) ^ byte1 ^ byte2 ^ galoisMultiplyGF2_8(byte3, 2);
+            operand[i] = (output[0] << 24) | (output[1] << 16) | (output[2] << 8) | output[3];
+        }
+    }
+    private void mixColumnsInverse(int[] operand) {
+        for (int i = 0; i < 4; i++) {
+            int column = operand[i];
+            int byte0 = (column >>> 24) & 0xFF;
+            int byte1 = (column >>> 16) & 0xFF;
+            int byte2 = (column >>> 8) & 0xFF;
+            int byte3 = column & 0xFF;
+
+            int[] output = new int[4];
+            output[0] = galoisMultiplyGF2_8(byte0, 14) ^ galoisMultiplyGF2_8(byte1, 11) ^ galoisMultiplyGF2_8(byte2, 13) ^ galoisMultiplyGF2_8(byte3, 9);
+            output[1] = galoisMultiplyGF2_8(byte0, 9) ^ galoisMultiplyGF2_8(byte1, 14) ^ galoisMultiplyGF2_8(byte2, 11) ^ galoisMultiplyGF2_8(byte3, 13);
+            output[2] = galoisMultiplyGF2_8(byte0, 13) ^ galoisMultiplyGF2_8(byte1, 9) ^ galoisMultiplyGF2_8(byte2, 14) ^ galoisMultiplyGF2_8(byte3, 11);
+            output[3] = galoisMultiplyGF2_8(byte0, 11) ^ galoisMultiplyGF2_8(byte1, 13) ^ galoisMultiplyGF2_8(byte2, 9) ^ galoisMultiplyGF2_8(byte3, 14);
             operand[i] = (output[0] << 24) | (output[1] << 16) | (output[2] << 8) | output[3];
         }
     }
@@ -192,24 +231,22 @@ public class AES256Universal {
 
         int[] expansionArr = new int[60];
         // filling up the first 8 words with bytes of the master-key
+        ByteBuffer byteBuffer = ByteBuffer.wrap(masterKey).order(ByteOrder.BIG_ENDIAN);
         for (int i = 0; i < 8; i++) {
-            expansionArr[i] =
-                    ((masterKey[i*4] & 0xFF) << 24) |
-                            ((masterKey[i*4 + 1] & 0xFF) << 16) |
-                            ((masterKey[i*4 + 2] & 0xFF) << 8) |
-                            (masterKey[i*4 + 3] & 0xFF);
+            expansionArr[i] = byteBuffer.getInt(i * 4);
         }
         // key expansion
         for (int i = 8; i < 60; i++) {
             int firstWord_ofRow = expansionArr[i - 1];
-            if (i % 8 == 0) {
+            int iModulo8 = i & 7;
+            if (iModulo8 == 0) {
                 // G function with RCON applied every 8th word in AES-256
                 firstWord_ofRow =
-                        subByte((firstWord_ofRow << 8) | (firstWord_ofRow >>> 24), false)
-                                ^ rijndaelRoundConstants[i / 8];
-            } else if (i % 8 == 4) {
+                        subByte((firstWord_ofRow << 8) | (firstWord_ofRow >>> 24))
+                                ^ rijndaelRoundConstants[i >> 3]; // i/8
+            } else if (iModulo8 == 4) {
                 // G function applied every 4th word regardless of RCON
-                firstWord_ofRow = subByte(firstWord_ofRow, false);
+                firstWord_ofRow = subByte(firstWord_ofRow);
             }
             expansionArr[i] = expansionArr[i - 8] ^ firstWord_ofRow;
         }
@@ -219,121 +256,87 @@ public class AES256Universal {
     // returns a 16-byte ciphertext-block per 16-byte plaintext-block
     protected byte[] rijndael256encrypt(byte[] plaintextBytesPadded, int[] expansionArr) {
         // matching to int-size (32 bits) round-key array-elements
-        int[] plaintextIntArr = new int[plaintextBytesPadded.length / 4];
-        for (int i = 0; i < plaintextIntArr.length; i++) {
-            plaintextIntArr[i] =
-                    ((plaintextBytesPadded[i*4    ] & 0xFF) << 24)
-                            | ((plaintextBytesPadded[i*4 + 1] & 0xFF) << 16)
-                            | ((plaintextBytesPadded[i*4 + 2] & 0xFF) << 8)
-                            | ( plaintextBytesPadded[i*4 + 3] & 0xFF);
+        int[] plaintextIntArr = new int[4];
+        ByteBuffer inputByteBuffer = ByteBuffer.wrap(plaintextBytesPadded).order(ByteOrder.BIG_ENDIAN);
+        for (int i = 0; i < 4; i++) {
+            plaintextIntArr[i] = inputByteBuffer.getInt(i * 4);
         }
         // round 0: XOR(plaintext, round 0 key)
-        for (int i = 0; i < plaintextIntArr.length; i += 4) {
-            for (int k = 0; k < 4; k++) {
-                plaintextIntArr[i+k] ^= expansionArr[k];
-            }
+        for (int k = 0; k < 4; k++) {
+            plaintextIntArr[k] ^= expansionArr[k];
         }
         // rounds 1-13
         for (int round = 1; round < 14; round++) {
-            for (int i = 0; i < plaintextIntArr.length; i++) {
-                plaintextIntArr[i] = subByte(plaintextIntArr[i], false);
-            }
-            for (int i = 0; i < plaintextIntArr.length; i += 4) {
-                shiftRows(plaintextIntArr, false);
-                mixColumns(plaintextIntArr, false);
+            for (int i = 0; i < 4; i++) {
+                plaintextIntArr[i] = subByte(plaintextIntArr[i]);
             }
 
+            shiftRows(plaintextIntArr);
+            mixColumns(plaintextIntArr);
+
             // XOR(text, round x key)
-            for (int i = 0; i < plaintextIntArr.length; i += 4) {
-                for (int k = 0; k < 4; k++) {
-                    plaintextIntArr[i+k] ^= expansionArr[round*4 + k];
-                }
+            for (int k = 0; k < 4; k++) {
+                plaintextIntArr[k] ^= expansionArr[round*4 + k];
             }
         }
         // round 14
-        for (int i = 0; i < plaintextIntArr.length; i++) {
-            plaintextIntArr[i] = subByte(plaintextIntArr[i], false);
-        }
-        for (int i = 0; i < plaintextIntArr.length; i += 4) {
-            shiftRows(plaintextIntArr, false);
-        }
-        // XOR(text, round 14 key)
-        for (int i = 0; i < plaintextIntArr.length; i += 4) {
-            for (int k = 0; k < 4; k++) {
-                plaintextIntArr[i+k] ^= expansionArr[14*4 + k];
-            }
+        for (int i = 0; i < 4; i++) {
+            plaintextIntArr[i] = subByte(plaintextIntArr[i]);
         }
 
+        shiftRows(plaintextIntArr);
+
+        // XOR(text, round 14 key)
+        for (int k = 0; k < 4; k++) {
+            plaintextIntArr[k] ^= expansionArr[14*4 + k];
+        }
 
         byte[] ciphertextBlock = new byte[16];
-        for (int i = 0; i < ciphertextBlock.length; i += 4) {
-            int word = plaintextIntArr[i / 4];
-            ciphertextBlock[i] = (byte) ((word >>> 24) & 0xFF);
-            ciphertextBlock[i + 1] = (byte) ((word >>> 16) & 0xFF);
-            ciphertextBlock[i + 2] = (byte) ((word >>> 8) & 0xFF);
-            ciphertextBlock[i + 3] = (byte) (word & 0xFF);
+        ByteBuffer outputByteBuffer = ByteBuffer.wrap(ciphertextBlock).order(ByteOrder.BIG_ENDIAN);
+        for (int i = 0; i < 4; i++) {
+            outputByteBuffer.putInt(i * 4, plaintextIntArr[i]);
         }
 
         return ciphertextBlock;
     }
 
     protected byte[] rijndael256decrypt(byte[] ciphertextInput, int[] expansionArr) {
-        byte[] ciphertextBytes = ciphertextInput.clone();
-
-        int[] ciphertext = new int[ciphertextBytes.length / 4];
+        int[] ciphertext = new int[4];
+        ByteBuffer inputByteBuffer = ByteBuffer.wrap(ciphertextInput).order(ByteOrder.BIG_ENDIAN);
         for (int i = 0; i < ciphertext.length; i++) {
-            ciphertext[i] =
-                    ((ciphertextBytes[i*4    ] & 0xFF) << 24)
-                            | ((ciphertextBytes[i*4 + 1] & 0xFF) << 16)
-                            | ((ciphertextBytes[i*4 + 2] & 0xFF) << 8)
-                            | ( ciphertextBytes[i*4 + 3] & 0xFF);
+            ciphertext[i] = inputByteBuffer.getInt(i * 4);
         }
 
         // round 0: XOR(ciphertext, round 14 key)
-        for (int i = 0; i < ciphertext.length; i += 4) {
-            for (int k = 0; k < 4; k++) {
-                ciphertext[i+k] ^= expansionArr[14*4 + k];
-            }
+        for (int k = 0; k < 4; k++) {
+            ciphertext[k] ^= expansionArr[14*4 + k];
         }
         // rounds 1-13
         for (int round = 13; round > 0; round--) {
-            for (int i = 0; i < ciphertext.length; i += 4) {
-                shiftRows(ciphertext, true);
-            }
+            shiftRowsInverse(ciphertext);
             for (int i = 0; i < ciphertext.length; i++) {
-                ciphertext[i] = subByte(ciphertext[i], true);
+                ciphertext[i] = subByteInverse(ciphertext[i]);
             }
             // XOR(text, round x key)
-            for (int i = 0; i < ciphertext.length; i += 4) {
-                for (int k = 0; k < 4; k++) {
-                    ciphertext[i+k] ^= expansionArr[round*4 + k];
-                }
+            for (int k = 0; k < 4; k++) {
+                ciphertext[k] ^= expansionArr[round*4 + k];
             }
-            for (int i = 0; i < ciphertext.length; i += 4) {
-                mixColumns(ciphertext, true);
-            }
+            mixColumnsInverse(ciphertext);
         }
         // round 14
-        for (int i = 0; i < ciphertext.length; i += 4) {
-            shiftRows(ciphertext, true);
-        }
+        shiftRowsInverse(ciphertext);
         for (int i = 0; i < ciphertext.length; i++) {
-            ciphertext[i] = subByte(ciphertext[i], true);
+            ciphertext[i] = subByteInverse(ciphertext[i]);
         }
         // XOR(text, round 0 key)
-        for (int i = 0; i < ciphertext.length; i += 4) {
-            for (int k = 0; k < 4; k++) {
-                ciphertext[i+k] ^= expansionArr[k];
-            }
+        for (int k = 0; k < 4; k++) {
+            ciphertext[k] ^= expansionArr[k];
         }
 
-
-        for (int i = 0; i < ciphertextBytes.length; i += 4) {
-            int word = ciphertext[i / 4];
-            ciphertextBytes[i] = (byte) ((word >>> 24) & 0xFF);
-            ciphertextBytes[i + 1] = (byte) ((word >>> 16) & 0xFF);
-            ciphertextBytes[i + 2] = (byte) ((word >>> 8) & 0xFF);
-            ciphertextBytes[i + 3] = (byte) (word & 0xFF);
+        byte[] ciphertextBytes = new byte[16];
+        ByteBuffer outputByteBuffer = ByteBuffer.wrap(ciphertextBytes).order(ByteOrder.BIG_ENDIAN);
+        for (int i = 0; i < 4; i++) {
+            outputByteBuffer.putInt(i * 4, ciphertext[i]);
         }
 
         return ciphertextBytes;

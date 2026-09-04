@@ -4,7 +4,8 @@ import com.example.encryptMsg.cryptography.customrolled.AES256Universal;
 import com.example.encryptMsg.cryptography.customrolled.sha.SHA256;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 
 @Service
 public class AES256GCM extends AES256Universal {
@@ -13,55 +14,56 @@ public class AES256GCM extends AES256Universal {
         super(sha256);
     }
 
+
     private long[] byteToLongArr(byte[] block16) {
-        long[] toReturn = new long[2];
-        for (int i = 0; i < 8; i++) {
-            toReturn[0] = (toReturn[0] << 8) | (block16[i] & 0xFFL);
-            toReturn[1] = (toReturn[1] << 8) | (block16[i + 8] & 0xFFL);
-        }
-        return toReturn;
+        MemorySegment segment = MemorySegment.ofArray(block16);
+        return new long[]{
+                segment.get(longLayout_bigEndian, 0L),
+                segment.get(longLayout_bigEndian, 8L)
+        };
     }
     private byte[] longToByteArr(long[] long2) {
-        byte[] concatToReturn = new byte[16];
-        for (int i = 0; i <= 1; i++) {
-            concatToReturn[8*i]     = (byte)(long2[i] >>> 56);
-            concatToReturn[8*i + 1] = (byte)(long2[i] >>> 48);
-            concatToReturn[8*i + 2] = (byte)(long2[i] >>> 40);
-            concatToReturn[8*i + 3] = (byte)(long2[i] >>> 32);
-            concatToReturn[8*i + 4] = (byte)(long2[i] >>> 24);
-            concatToReturn[8*i + 5] = (byte)(long2[i] >>> 16);
-            concatToReturn[8*i + 6] = (byte)(long2[i] >>>  8);
-            concatToReturn[8*i + 7] = (byte)(long2[i]);
-        }
-        return concatToReturn;
+        byte[] segmentToReturn = new byte[16];
+        MemorySegment segment = MemorySegment.ofArray(segmentToReturn);
+        segment.set(longLayout_bigEndian, 0L, long2[0]);
+        segment.set(longLayout_bigEndian, 8L, long2[1]);
+        return segmentToReturn;
     }
 
 
     // GHASH
-    private byte[] galoisHash(byte[] H, byte[] ciphertext) {
+    private byte[] galoisHash(byte[] H, byte[] ciphertext, Arena arena) {
         long[] hLong = byteToLongArr(H);
         long[] accumulatorToReturn = new long[2];
+
+        MemorySegment ciphertextSegment = MemorySegment.ofArray(ciphertext);
 
         // hashing through non-padded blocks
         int blockCount_totalInCiphertext = ciphertext.length / 16;
         for (int i = 0; i < blockCount_totalInCiphertext; i++) {
-            long[] cipherBlockLong =
-                    byteToLongArr(
-                            Arrays.copyOfRange(ciphertext, i * 16, i * 16 + 16)
-                    );
-            accumulatorToReturn[0] ^= cipherBlockLong[0];
-            accumulatorToReturn[1] ^= cipherBlockLong[1];
+            long long0 = ciphertextSegment.get(longLayout_bigEndian, i * 16);
+            long long1 = ciphertextSegment.get(longLayout_bigEndian, i * 16 + 8);
+
+            accumulatorToReturn[0] ^= long0;
+            accumulatorToReturn[1] ^= long1;
             accumulatorToReturn = galoisMultiplyGF2_128(accumulatorToReturn, hLong);
         }
 
         // hashing through padded block
-        int remainder = ciphertext.length % 16;
-        if (remainder > 0) {
-            byte[] cipherBlockBytes = new byte[16];
-            System.arraycopy(ciphertext, blockCount_totalInCiphertext * 16, cipherBlockBytes, 0, remainder);
-            long[] cipherBlockLong = byteToLongArr(cipherBlockBytes);
-            accumulatorToReturn[0] ^= cipherBlockLong[0];
-            accumulatorToReturn[1] ^= cipherBlockLong[1];
+        int remainder = ciphertext.length & 15;
+        if (remainder != 0) {
+            MemorySegment remainderSegment_offHeap = arena.allocate(16);
+            MemorySegment.copy(
+                    ciphertextSegment, blockCount_totalInCiphertext * 16,
+                    remainderSegment_offHeap, 0,
+                    remainder
+            );
+
+            long long0 = remainderSegment_offHeap.get(longLayout_bigEndian, 0L);
+            long long1 = remainderSegment_offHeap.get(longLayout_bigEndian, 8L);
+
+            accumulatorToReturn[0] ^= long0;
+            accumulatorToReturn[1] ^= long1;
             accumulatorToReturn = galoisMultiplyGF2_128(accumulatorToReturn, hLong);
         }
 
@@ -72,98 +74,121 @@ public class AES256GCM extends AES256Universal {
 
         return longToByteArr(accumulatorToReturn);
     }
-    // finite-field multiplication in GF(2^128)
+
+    // branchless constant-time finite-field multiplication in GF(2^128)
     public long[] galoisMultiplyGF2_128(long[] operand1, long[] operand2) {
         long[] productAccumulator = new long[2];
         long low1 = operand1[0], high1 = operand1[1];
 
         for (int i = 0; i < 128; i++) {
-            long presentBit_operand2 = (i < 64) ? ((operand2[0] >>> i) & 1L) : ((operand2[1] >>> (i - 64)) & 1L);
+            int arrayIndex_operand2 = i >> 6; // 63 is a bitstream of six 1's. This field equals 0 if i < 64 and 1 if i >= 64.
+            int presentBitModulo64_operand2 = i & 63; // functions as i % 64
+            long presentBit_operand2 = (operand2[arrayIndex_operand2] >>> presentBitModulo64_operand2) & 1L; // least-significant-byte after right-shift
 
-            // every time a 1-bit is found in operand2, XORing the product-array with the proper rotation of operand1 will function as addition.
-            if (presentBit_operand2 == 1L) {
-                productAccumulator[0] ^= low1;
-                productAccumulator[1] ^= high1;
-            }
+            // every time a 1-bit is found in operand2, XORing the product-array with the proper shift of operand1 will function as addition.
+            long maskBinary_allSame = -presentBit_operand2; // all 1s as two's complement of -1 or all 0s as two's complement of 0
+            productAccumulator[0] ^= low1 & maskBinary_allSame;
+            productAccumulator[1] ^= high1 & maskBinary_allSame;
 
-            // If the least-significant-bit of operand1 is 1, operand1 will overflow during right rotation.
-            boolean willOverflow = ((high1 & 1L) == 1L);
+            // If the least-significant-bit of operand1 is 1, operand1 will overflow during right shift.
+            long maskBinary_all1ifOverflow = -(high1 & 1L);
 
-            // Multiplying operand1 by 2, which translates to right rotation of operand1 by 1 bit
+            // Multiplying operand1 by 2, which translates to right shift of operand1 by 1 bit
             high1 = (high1 >>> 1) | (low1 << 63);
             low1 = (low1 >>> 1);
 
-            if (willOverflow) {
-                // multiply operand1 by GF(2^128) reversed polynomial 0xE1 until it is certainly within the Galois field.
-                low1 ^= 0xE100000000000000L;
-            }
+            // subtract operand1 by GF(2^128) reversed polynomial 0xE1 until it is certainly within the Galois field.
+            low1 ^= 0xE100000000000000L & maskBinary_all1ifOverflow;
         }
         return productAccumulator;
     }
 
 
     public byte[] aes256encryptionGCM(byte[] plaintextBytes, int[] expansionArr, byte[] nonce96Bit) {
-        byte[] H = rijndael256encrypt(new byte[16], expansionArr);
+        try (Arena arena = Arena.ofConfined()) {
+            byte[] J0 = new byte[16]; // nonce || counter=1
+            byte[] H = rijndael256encrypt(J0, expansionArr); // passing an all-0 byte-array
+            System.arraycopy(nonce96Bit, 0, J0, 0, 12);
+            J0[15] = 1;
+            byte[] J0incremented = J0.clone();
 
-        byte[] J0 = new byte[16]; // nonce + counter
-        System.arraycopy(nonce96Bit, 0, J0, 0, 12);
-        J0[15] = 1;
-        byte[] J0incremented = J0.clone();
+            int counter = 1;
 
-        byte[] ciphertextBytes = new byte[plaintextBytes.length];
-        for (int i = 0; i < plaintextBytes.length; i += 16) {
-            for (int k = 15; k >= 12; k--) if (++J0incremented[k] != 0) break;
-            byte[] J0incrementedCiphertext = rijndael256encrypt(J0incremented, expansionArr);
+            byte[] ciphertextBytes = new byte[plaintextBytes.length];
 
-            int lengthOf_presentBlock = Math.min(16, plaintextBytes.length - i);
-            for (int k = 0; k < lengthOf_presentBlock; k++) {
-                ciphertextBytes[i + k] = (byte) (plaintextBytes[i + k] ^ J0incrementedCiphertext[k]);
+            for (int i = 0; i < plaintextBytes.length; i += 16) {
+                counter++;
+                J0incremented[12] = (byte) (counter >>> 24);
+                J0incremented[13] = (byte) (counter >>> 16);
+                J0incremented[14] = (byte) (counter >>> 8);
+                J0incremented[15] = (byte) counter;
+
+                byte[] J0incrementedCiphertext = rijndael256encrypt(J0incremented, expansionArr);
+
+                int lengthOf_presentBlock = Math.min(16, plaintextBytes.length - i);
+                for (int k = 0; k < lengthOf_presentBlock; k++) {
+                    ciphertextBytes[i + k] = (byte) (plaintextBytes[i + k] ^ J0incrementedCiphertext[k]);
+                }
             }
-        }
 
-        byte[] tag = new byte[16];
-        byte[] J0Ciphertext = rijndael256encrypt(J0, expansionArr);
-        for (int i = 0; i < 16; i++) {
-            tag[i] = (byte) (galoisHash(H, ciphertextBytes)[i] ^ J0Ciphertext[i]);
+            byte[] ghashBytes = galoisHash(H, ciphertextBytes, arena);
+            byte[] encryptedJ0 = rijndael256encrypt(J0, expansionArr);
+            byte[] tag = new byte[16];
+
+            for (int i = 0; i < 16; i++) {
+                tag[i] = (byte) (ghashBytes[i] ^ encryptedJ0[i]);
+            }
+            byte[] finalOutput = new byte[ciphertextBytes.length + 16];
+            System.arraycopy(ciphertextBytes, 0, finalOutput, 0, ciphertextBytes.length);
+            System.arraycopy(tag, 0, finalOutput, ciphertextBytes.length, 16);
+            return finalOutput;
         }
-        byte[] finalOutput = new byte[ciphertextBytes.length + 16];
-        System.arraycopy(ciphertextBytes, 0, finalOutput, 0, ciphertextBytes.length);
-        System.arraycopy(tag, 0, finalOutput, ciphertextBytes.length, 16);
-        return finalOutput;
     }
     public char[] aes256decryptionGCM(byte[] ciphertextInput, int[] expansionArr, byte[] nonce96Bit) {
-        if (ciphertextInput.length < 16) throw new IllegalArgumentException("There are too few ciphertext bytes for a GCM tag to possibly exist.");
-        int ciphertextByteCount = ciphertextInput.length - 16;
-        byte[] ciphertextBytes = new byte[ciphertextByteCount];
-        byte[] inputTagGCM = new byte[16];
-        System.arraycopy(ciphertextInput, 0, ciphertextBytes, 0, ciphertextByteCount);
-        System.arraycopy(ciphertextInput, ciphertextByteCount, inputTagGCM, 0, 16);
+        try (Arena arena = Arena.ofConfined()) {
+            if (ciphertextInput.length < 16) throw new IllegalArgumentException("There are too few ciphertext bytes for a GCM tag to possibly exist.");
 
-        byte[] H = rijndael256encrypt(new byte[16], expansionArr);
-        byte[] J0 = new byte[16]; // nonce + counter
-        System.arraycopy(nonce96Bit, 0, J0, 0, 12);
-        J0[15] = 1;
+            int ciphertextByteCount = ciphertextInput.length - 16;
+            byte[] ciphertextBytes = new byte[ciphertextByteCount];
+            byte[] inputTagGCM = new byte[16];
+            System.arraycopy(ciphertextInput, 0, ciphertextBytes, 0, ciphertextByteCount);
+            System.arraycopy(ciphertextInput, ciphertextByteCount, inputTagGCM, 0, 16);
 
-        byte[] expectedTagGCM = new byte[16];
-        byte[] J0Ciphertext = rijndael256encrypt(J0, expansionArr);
-        for (int i = 0; i < 16; i++) {
-            expectedTagGCM[i] = (byte) (galoisHash(H, ciphertextBytes)[i] ^ J0Ciphertext[i]);
-        }
+            byte[] H = rijndael256encrypt(new byte[16], expansionArr);
 
-        if (!compareByteArrays_constantTime(expectedTagGCM, inputTagGCM)) throw new IllegalArgumentException("Message tampered or wrong password!");
+            byte[] J0 = new byte[16]; // nonce || counter=1
+            System.arraycopy(nonce96Bit, 0, J0, 0, 12);
+            J0[15] = 1;
 
-        byte[] J0incremented = J0.clone();
-        byte[] plaintextBytes = new byte[ciphertextByteCount];
-
-        for (int i = 0; i < ciphertextByteCount; i += 16) {
-            for (int k = 15; k >= 12; k--) if (++J0incremented[k] != 0) break;
-            byte[] J0incrementedCiphertext = rijndael256encrypt(J0incremented, expansionArr);
-
-            int lengthOf_presentBlock = Math.min(16, ciphertextBytes.length - i);
-            for (int k = 0; k < lengthOf_presentBlock; k++) {
-                plaintextBytes[i + k] = (byte) (ciphertextBytes[i + k] ^ J0incrementedCiphertext[k]);
+            byte[] ghashResult = galoisHash(H, ciphertextBytes, arena);
+            byte[] encryptedJ0 = rijndael256encrypt(J0, expansionArr);
+            byte[] expectedTagGCM = new byte[16];
+            for (int i = 0; i < 16; i++) {
+                expectedTagGCM[i] = (byte) (ghashResult[i] ^ encryptedJ0[i]);
             }
+
+            if (!compareByteArrays_constantTime(expectedTagGCM, inputTagGCM)) throw new IllegalArgumentException("Message tampered or wrong password!");
+
+            byte[] J0incremented = J0.clone();
+            int counter = 1;
+            byte[] plaintextBytes = new byte[ciphertextByteCount];
+
+            for (int i = 0; i < ciphertextByteCount; i += 16) {
+                counter++;
+                J0incremented[12] = (byte) (counter >>> 24);
+                J0incremented[13] = (byte) (counter >>> 16);
+                J0incremented[14] = (byte) (counter >>> 8);
+                J0incremented[15] = (byte) counter;
+
+                byte[] J0incrementedCiphertext = rijndael256encrypt(J0incremented, expansionArr);
+
+                int lengthOf_presentBlock = Math.min(16, ciphertextBytes.length - i);
+                for (int k = 0; k < lengthOf_presentBlock; k++) {
+                    plaintextBytes[i + k] = (byte) (ciphertextBytes[i + k] ^ J0incrementedCiphertext[k]);
+                }
+            }
+
+            return byteToCharArr(plaintextBytes);
         }
-        return byteToCharArr(plaintextBytes);
     }
 }

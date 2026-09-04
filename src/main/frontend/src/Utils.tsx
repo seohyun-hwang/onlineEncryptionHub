@@ -6,7 +6,7 @@ export function StatusMessage({ status }: { status: Status }) {
   return <div className={`status-badge ${status.type}`}>{status.msg}</div>;
 }
 
-export function useStatusTimer(status: Status, setStatus: React.Dispatch<React.SetStateAction<Status>>) {
+export function useStatusTimer(duration: number, status: Status, setStatus: React.Dispatch<React.SetStateAction<Status>>) {
   useEffect(() => {
     if (status.msg && status.type !== 'loading') {
       const timer = setTimeout(() => {
