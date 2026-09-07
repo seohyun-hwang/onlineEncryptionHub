@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:8080/api';
+export const API_BASE_URL = '/api';
 
 export type Tab = 'accounts' | 'messages';
 export type StatusType = 'success' | 'error' | 'loading' | '';

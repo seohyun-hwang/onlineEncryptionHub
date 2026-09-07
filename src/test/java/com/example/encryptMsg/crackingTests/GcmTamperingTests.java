@@ -35,7 +35,7 @@ public class GcmTamperingTests {
     @Test
     void AES256GCM_customTamper() throws Exception { // should throw exception
         char[] plaintext = "Top Secret Financial Data".toCharArray();
-        char[] password = "SecurePassword123!".toCharArray();
+        char[] password = "password0123456789".toCharArray();
         byte[] expansionSalt = new byte[32];
         SecureRandom secureRandom = new SecureRandom();
         secureRandom.nextBytes(expansionSalt);
@@ -54,7 +54,7 @@ public class GcmTamperingTests {
     @Test
     void AES256GCM_compliantTamper() throws Exception { // should throw exception
         char[] plaintext = "Top Secret Financial Data".toCharArray();
-        char[] password = "SecurePassword123!".toCharArray();
+        char[] password = "password0123456789".toCharArray();
         byte[] expansionSalt = new byte[32];
         secureRandom.nextBytes(expansionSalt);
 

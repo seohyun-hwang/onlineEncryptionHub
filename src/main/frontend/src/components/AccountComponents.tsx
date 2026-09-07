@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { API_BASE_URL, type Status } from '../Types';
-import { StatusMessage, useStatusTimer, clearPassword } from '../Utils';
+import { StatusMessage, useStatusTimer, clearPassword, refreshCursor } from '../Utils';
 
 interface CreateAccountProps {
-  status: Status;
-  setStatus: React.Dispatch<React.SetStateAction<Status>>;
+  setGlobalStatusLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function CreateAccount({ setGlobalStatusLoading }: CreateAccountProps) {
   const [status, setStatus] = useState<Status>({ type: '', msg: '' });
   const [cipherModeFrontend, setCipherModeFrontend] = useState<'GCM' | 'CBC'>('GCM');
+  useEffect(() => {refreshCursor();}, [status.type])
 
   useStatusTimer(5000, status, setStatus);
 
@@ -55,17 +55,21 @@ export function CreateAccount({ setGlobalStatusLoading }: CreateAccountProps) {
   return (
     <section className="card">
       <h2>Create Account</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={(e) => {
+        if (status.type === 'loading') return;
+        handleSubmit(e);
+      }}>
         <input name="username" type="text" placeholder="Username" required />
         <input name="password" type="password" placeholder="Password" required />
 
         <div className="form-group">
-          <label className="group-label">Encryption Cipher Mode</label>
+          <label className="group-label">Select Cipher Mode:</label>
           <div className="button-group">
             <button
               type="button"
-              disabled={status.type === 'loading'}
+              data-loading={status.type === 'loading'}
               className={cipherModeFrontend === 'GCM' ? 'active' : ''}
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => setCipherModeFrontend('GCM')}
             >
               AES-256-GCM
@@ -74,8 +78,9 @@ export function CreateAccount({ setGlobalStatusLoading }: CreateAccountProps) {
             </button>
             <button
               type="button"
-              disabled={status.type === 'loading'}
+              data-loading={status.type === 'loading'}
               className={cipherModeFrontend === 'CBC' ? 'active' : ''}
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => setCipherModeFrontend('CBC')}
             >
               AES-256-CBC
@@ -85,7 +90,7 @@ export function CreateAccount({ setGlobalStatusLoading }: CreateAccountProps) {
           </div>
         </div>
 
-        <button type="submit" disabled={status.type === 'loading'}>
+        <button type="submit" data-loading={status.type === 'loading'}>
         {status.type === 'loading' ? 'Please Hold On' : 'Register Account'}
         </button>
       </form>
@@ -96,6 +101,7 @@ export function CreateAccount({ setGlobalStatusLoading }: CreateAccountProps) {
 
 export function DeleteAccount({ setGlobalStatusLoading }: CreateAccountProps) {
   const [status, setStatus] = useState<Status>({ type: '', msg: '' });
+  useEffect(() => {refreshCursor();}, [status.type])
 
   useStatusTimer(5000, status, setStatus);
 
@@ -135,10 +141,18 @@ export function DeleteAccount({ setGlobalStatusLoading }: CreateAccountProps) {
   return (
     <section className="card danger-zone">
       <h2>Delete Account</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={(e) => {
+        if (status.type === 'loading') return;
+        handleSubmit(e);
+      }}>
         <input name="username" type="text" placeholder="Username" required />
         <input name="password" type="password" placeholder="Password" required />
-        <button type="submit" className="danger-btn" disabled={status.type === 'loading'}>
+        <button
+            type="submit"
+            className="danger-btn"
+            data-loading={status.type === 'loading'}
+            onMouseDown={(e) => e.preventDefault()}
+            >
         {status.type === 'loading' ? 'Please Hold On' : 'Delete Forever'}
         </button>
       </form>

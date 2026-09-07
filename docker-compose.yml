@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: encryption-hub-backend
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      - LLM_API_URL=http://host.docker.internal:11434/v1/chat/completions
+      - LLM_API_KEY=ollama-local-key
+      - LLM_MODEL=llama3
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # compatible with Linux, MacOS, and Windows
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: encryption-hub-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

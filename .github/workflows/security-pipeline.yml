@@ -1,0 +1,32 @@
+name: Security & Detection Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  validate-security-and-crypto:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 24 (Project Panama & Vector API)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '24'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Cryptography, Tampering & Detection Tests
+        run: mvn clean verify --add-modules jdk.incubator.vector
+
+      - name: Verify Docker Image Build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: online-encryption-hub:latest

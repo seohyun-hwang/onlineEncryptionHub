@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -48,7 +47,11 @@ public class UserController {
     @PostMapping("/messages/create")
     public ResponseEntity<CreateMessageResponse> createMessage(@Valid @RequestBody CreateMessageRequest info) throws Exception {
         try {
-            CreateMessageResponse response = userService.createMessage(info.getUsername(), info.getMessagePlaintext(), info.getPassword());
+            CreateMessageResponse response = userService.createMessage(
+                    info.getUsername(),
+                    info.getMessagePlaintext(),
+                    info.getPassword()
+            );
             if (response == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             return ResponseEntity.ok(response);
         } finally {

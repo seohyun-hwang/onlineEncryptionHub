@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import type { Status } from './Types';
 
 export function StatusMessage({ status }: { status: Status }) {
@@ -11,10 +11,18 @@ export function useStatusTimer(duration: number, status: Status, setStatus: Reac
     if (status.msg && status.type !== 'loading') {
       const timer = setTimeout(() => {
         setStatus({ type: '', msg: '' });
-      }, 5000);
+      }, duration);
       return () => clearTimeout(timer);
     }
   }, [status, setStatus]);
+}
+
+export function refreshCursor() {
+  if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  const event = new MouseEvent('mousemove', { bubbles: true, cancelable: true });
+  window.dispatchEvent(event);
 }
 
 export function clearPassword(form: HTMLFormElement) {

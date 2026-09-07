@@ -33,8 +33,7 @@ public class CbcTamperingTests {
 
     @Test
     void custom_AES256CBC_TamperLastBlock_ThrowsInvalidPadding() throws Exception {
-        // Message must be long enough to span multiple blocks
-        char[] plaintext = "AAAAAHHHHHHHHH".toCharArray();
+        char[] plaintext = "AAAAAHHHHHHHHH".toCharArray(); // should be bigger than 16 bytes somehow
         char[] password = "password0123456789".toCharArray();
         byte[] expansionSalt = new byte[32];
         secureRandom.nextBytes(expansionSalt);
@@ -42,10 +41,9 @@ public class CbcTamperingTests {
         IV_and_Ciphertext encryptedData = encryptionCustom.encryptionAES(plaintext, password, expansionSalt, "CBC");
         byte[] tamperedCiphertext = encryptedData.ciphertext().clone();
 
-        // Tamper with the very last byte of the ciphertext
-        tamperedCiphertext[tamperedCiphertext.length - 1] ^= 0x01;
+        tamperedCiphertext[tamperedCiphertext.length - 1] ^= 0x01; // Tampering with the last ciphertext-byte
 
-        // Because the last block is scrambled, PKCS#7 padding validation fails
+        // PKCS#7 padding validation fails here
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             encryptionCustom.decryptionAES(tamperedCiphertext, encryptedData.iv(), password, expansionSalt, "CBC");
         });

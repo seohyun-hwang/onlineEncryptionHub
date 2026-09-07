@@ -1,20 +1,21 @@
 :root {
-  --bg-color: #f3f4f6;
+  --bg-color: #0f172a;
   --primary: #261c73;
   --auxiliary: #4647b3;
-  --dull: #64748b;
+  --dull: #505c6e;
   --primary-hover: #25eba6;
   --danger: #ef4444;
   --danger-hover: #d7c51f;
-  --card-bg: #ffffff;
-  --border: #e5e7eb;
+  --card-bg: linear-gradient(to right, #152642, #211e3b);
+  --border: #211e3b;
 }
 
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg-color);
-  color: #1c1743;
+  color: #252333;
+
 }
 
 .container {
@@ -31,7 +32,12 @@ header {
 
 header h1 {
   margin: 0 0 0.5rem 0;
-  color: var(--primary);
+    font-family: 'Quicksand', sans-serif;
+    font-size: 2.5rem;
+    letter-spacing: -0.05em;
+    background: linear-gradient(to bottom, #d1b575, #8a774c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 header p {
@@ -50,29 +56,32 @@ header p {
 .tabs button {
   background: transparent;
   border: 2px solid var(--border);
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  padding: 0.75rem 2rem;
+  border-radius: 99px;
   font-weight: 600;
   cursor: pointer;
   color: #a0aab8;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .tabs button.active {
   border-color: var(--primary);
-  background: #eff6ff;
+  background: #cab3fc;
   color: var(--primary);
 }
 
-.tabs button:hover {
-  border-color: grey;
-  background: #eff6ff;
-  color: grey;
-}
-
-.tabs button:disabled {
+.tabs button[data-loading="true"] {
   background: transparent;
   color: var(--dull);
+  cursor: wait;
+}
+
+@media (hover: hover) {
+  .tabs button:not(.active):not([data-loading="true"]):hover {
+    border-color: grey;
+    color: grey;
+  }
 }
 
 /* Layout */
@@ -94,6 +103,9 @@ header p {
 .card h2 {
   margin-top: 0;
   font-size: 1.25rem;
+  background: linear-gradient(to bottom, #6ec499, #486b59);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
   border-bottom: 1px solid var(--border);
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
@@ -122,15 +134,28 @@ form {
 
 input, textarea {
   width: 100%;
+  background: #0f172a;
   padding: 0.75rem;
   border: 1px solid var(--border);
   border-radius: 6px;
   box-sizing: border-box;
-  font-family: inherit;
+  color: lightgrey;
+  font-family: Quicksand;
 }
 
 textarea {
   resize: vertical;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: #b96a10;
+  box-shadow: 0 0 0 3px #b99d10;
+  transition: all 0.1s;
+}
+
+button:focus {
+  outline: none !important;
 }
 
 button[type="submit"] {
@@ -142,36 +167,45 @@ button[type="submit"] {
   font-weight: bold;
   cursor: pointer;
   transition: 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
-button[type="submit"]:disabled {
+
+button[type="submit"][data-loading="true"] {
   background: #c0ebdc;
-  color: --primary-hover;
+  color: var(--primary-hover);
   cursor: wait;
   opacity: 0.8;
 }
 
-button[type="submit"]:hover {
-  background: var(--primary-hover);
-}
-button[type="submit"]:disabled:hover {
-  background: #c0ebdc;
+@media (hover: hover) {
+  button[type="submit"]:not([data-loading="true"]):hover {
+    background: var(--primary-hover);
+  }
+
+  button[type="submit"][data-loading="true"]:hover {
+    background: #b2e4d2;
+    cursor: not-allowed;
+  }
 }
 
 .danger-btn {
   background: var(--danger) !important;
 }
-.danger-btn:disabled {
+
+.danger-btn[data-loading="true"] {
   background: #fca5a5 !important;
   color: #f1f5f9;
   cursor: wait !important;
   opacity: 0.8;
 }
 
-.danger-btn:hover {
-  background: var(--danger-hover) !important;
-}
-.danger-btn:disabled:hover {
-  background: #fca5a5 !important;
+@media (hover: hover) {
+  .danger-btn:not([data-loading="true"]):hover {
+    background: var(--danger-hover) !important;
+  }
+  .danger-btn[data-loading="true"]:hover {
+    background: #f89696 !important;
+  }
 }
 
 .auth-row {
@@ -203,7 +237,7 @@ button[type="submit"]:disabled:hover {
 }
 
 .message-item {
-  background: #f8fafc;
+  background: #8d99a6;
   border: 1px solid var(--border);
   padding: 1rem;
   border-radius: 8px;
@@ -223,7 +257,7 @@ button[type="submit"]:disabled:hover {
   font-size: 0.9rem;
 }
 
-/* --- Segmented Control for Cipher Mode --- */
+/* Segmented Control (Cipher mode selection) */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -245,9 +279,8 @@ button[type="submit"]:disabled:hover {
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
-  background-color: #f8fafc;
+  background-color: #97afc7;
 }
-
 
 .button-group button {
   flex: 1;
@@ -260,37 +293,44 @@ button[type="submit"]:disabled:hover {
   cursor: pointer;
   transition: all 0.2s ease;
   border-right: 1px solid var(--border);
-}
-.button-group button:disabled {
-  background: #c0ebdc !important;
-  color: var(--dull);
-  cursor: wait !important;
-  opacity: 0.8;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .button-group button:last-child {
   border-right: none;
 }
 
-.button-group button:hover {
-  background-color: #e2e8f0;
-}
-.button-group button:disabled:hover {
-  background: var(--primary-hover) !important;
-}
-
 .button-group button.active {
   background-color: var(--auxiliary);
   color: white;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
 }
-.button-group button.active:hover {
-  background-color: var(--dull);
-  color: white;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-}
-.button-group button.active:disabled {
-  background-color: var(--auxiliary);
+
+.button-group button[data-loading="true"] {
+  background: #c0ebdc !important;
   color: var(--dull);
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+  cursor: wait !important;
+  opacity: 0.8;
+}
+
+.button-group button.active[data-loading="true"] {
+  background-color: var(--auxiliary) !important;
+  color: var(--dull) !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+@media (hover: hover) {
+  .button-group button:not(.active):not([data-loading="true"]):hover {
+    background-color: #e2e8f0;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .button-group button.active:not([data-loading="true"]):hover {
+    background-color: var(--dull);
+  }
+
+  .button-group button[data-loading="true"]:hover {
+    background-color: #b2e4d2 !important;
+    cursor: not-allowed;
+  }
 }

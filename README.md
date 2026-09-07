@@ -5,8 +5,25 @@ Since custom-rolled cryptography is unprofessional, I also included a fully libr
 To toggle from the custom-rolled version to the library-based version, go to `src/main/java/com.example.encryptMsg/service/UserService.java`, then find the class constructor and edit `@Qualifier("custom")` to `@Qualifier("compliant")`.
 
 ## Running the project
-This is a fullstack application; the backend and frontend must be run simultaneously. The project files include both the frontend and backend.
 
+### For the all-inclusive experience
+This is a fullstack application; the project files include both the frontend and backend.
+
+Required additional installations: Docker, Ollama
+
+Docker and Ollama must be run simultaneously with the project.
+
+Docker is included to run both simultaneously with all required file dependencies, but this means that Docker itself must be installed locally on the device that runs this project.
+
+Meta's Llama 3 is the LLM used for this project. Ollama should be installed and run so that the project can access Llama 3.
+
+Once all setup is completed, go to the terminal, get to the project directory, and enter 'docker compose up --build'. To run it in the background, instead enter 'docker compose up --build -d'.
+
+To shut down the project, enter 'docker compose down'.
+
+Port: http://localhost:80/
+
+### To try the frontend/backend separately:
 Backend: run `src/main/java/com.example.encryptMsg/EncryptMsgApplication.java`.
 
 Frontend: access `src/main/frontend` in the terminal/CMD, then enter `npm run dev`.
@@ -20,6 +37,8 @@ This project was done for self-study on cryptographic algorithms, bitwise operat
 The application asks you to create an account with a username and password, after which it lets you store encrypted text-entries in a database (which is cleared as soon as the backend program is terminated).
 
 This program takes advantage of Java Project Panama (incl. Vector API and MemorySegment).
+
+This program also demonstrates an interactive honeypot terminal, which implements both deterministic and LLM-supported responses.
 
 Features:
 1. Create account (SHA-256 password hashing)
@@ -70,12 +89,14 @@ All Rest API communication to the frontend is found in `src/main/java/controller
 
 All unit-tests are found in `src/test/java/com.example.encryptMsg/`. Mockito is the mocking framework used in `UserControllerTest.java` and `UserServiceTest.java`.
 
+It must be noted that all these server-side cybersecurity measures don't really matter if the website isn't run on HTTPS. Having said that, this isn't really an issue on localhost.
+
 ### Backend development tools
 Java 24, SpringBoot 4.1.0, Maven 4.0.0, Jar packaging, Properties configuration
 
 Key dependencies: Spring Web, Spring Boot DevTools, Spring Data JPA, Spring Web MVC, H2 Database
 
-Key plugins: Maven Compiler Plugin, Maven Surefire Plugin, Eirslett Frontend Maven 1.15.1, Maven Resources node 20.11.0 npm 10.2.4
+Key plugins: Maven Compiler Plugin, Maven Surefire Plugin, Eirslett Frontend Maven 1.15.1, Maven Resources node 24.12.0 npm 10.2.4
 
 ### Frontend development tools
 TypeScript 6.0.2, React 19.2.8, Vite 8.2.2
