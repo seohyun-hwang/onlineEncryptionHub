@@ -12,17 +12,19 @@ jobs:
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 24 (Project Panama & Vector API)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '24'
           distribution: 'temurin'
           cache: maven
 
       - name: Run Cryptography, Tampering & Detection Tests
-        run: mvn clean verify --add-modules jdk.incubator.vector
+        env:
+          MAVEN_OPTS: "--add-modules jdk.incubator.vector"
+        run: mvn clean verify -DargLine="--add-modules jdk.incubator.vector"
 
       - name: Verify Docker Image Build
         uses: docker/build-push-action@v5

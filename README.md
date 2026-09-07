@@ -34,11 +34,13 @@ Ports: http://localhost:8080/ for backend; http://localhost:5173/ for frontend.
 
 This project was done for self-study on cryptographic algorithms, bitwise operations, branchless constant-time finite-field arithmetic in GF(2^8) and GF(2^128), SpringBoot, Rest API, system design, database interaction, unit-test writing, and UI/UX integration with ReactJS frontend.
 
+The project also demonstrates an interactive honeypot terminal, which implements both deterministic and LLM-supported responses (using Meta's Llama 3).
+
+Additional implementations include Docker Compose, Nginx, and a GitHub security pipeline.
+
 The application asks you to create an account with a username and password, after which it lets you store encrypted text-entries in a database (which is cleared as soon as the backend program is terminated).
 
 This program takes advantage of Java Project Panama (incl. Vector API and MemorySegment).
-
-This program also demonstrates an interactive honeypot terminal, which implements both deterministic and LLM-supported responses.
 
 Features:
 1. Create account (SHA-256 password hashing)
