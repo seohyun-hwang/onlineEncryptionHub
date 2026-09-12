@@ -17,9 +17,9 @@ Docker is included to run both simultaneously with all required file dependencie
 
 Meta's Llama 3 is the LLM used for this project. Ollama should be installed and run so that the project can access Llama 3.
 
-Once all setup is completed, go to the terminal, get to the project directory, and enter 'docker compose up --build'. To run it in the background, instead enter 'docker compose up --build -d'.
+Once all setup is completed, go to the terminal, get to the project directory, and enter `docker compose up --build`. To run it in the background, instead enter `docker compose up --build -d`.
 
-To shut down the project, enter 'docker compose down'.
+To shut down the project, enter `docker compose down`.
 
 Port: http://localhost:80/
 
