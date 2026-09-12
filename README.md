@@ -6,22 +6,19 @@ To toggle from the custom-rolled version to the library-based version, go to `sr
 
 ## Running the project
 
-### For the all-inclusive experience
+### For the all-inclusive experience:
 This is a fullstack application; the project files include both the frontend and backend.
 
-Required additional installations: Docker, Ollama
+**Docker** and **Ollama** must be run simultaneously with the project.
+- Locally-installed applications: Docker, Ollama 
+- Docker is included to run both simultaneously with all required file dependencies, but this means that Docker itself must be installed locally on the device that runs this project. 
+- Meta's Llama 3 is the LLM used for this project. Ollama should be installed and run so that the project can access Llama 3.
 
-Docker and Ollama must be run simultaneously with the project.
-
-Docker is included to run both simultaneously with all required file dependencies, but this means that Docker itself must be installed locally on the device that runs this project.
-
-Meta's Llama 3 is the LLM used for this project. Ollama should be installed and run so that the project can access Llama 3.
-
-Once all setup is completed, go to the terminal, get to the project directory, and enter `docker compose up --build`. To run it in the background, instead enter `docker compose up --build -d`.
+Once all setup is completed, open the project root-directory terminal, then enter `docker compose up --build`. To run the project in the background, instead enter `docker compose up --build -d`.
 
 To shut down the project, enter `docker compose down`.
 
-Port: http://localhost:80/
+To access the project frontend, enter the URL http://localhost:80/ in your preferred browser.
 
 ### To try the frontend/backend separately:
 Backend: run `src/main/java/com.example.encryptMsg/EncryptMsgApplication.java`.
@@ -84,8 +81,8 @@ Additional protection implemented against:
    1. Solution: implemented a class `java/com.example.encryptMsg/config/CharArrDeserialization.java` which overrides Jackson's deserialization process to parse texts as char-arrays
 
 Strategy patterns (loosely-coupled):
-1. There is a frontend button-row in account-creation with which the user decides whether to use AES-GCM or AES-CBC as the message cipher mode. The choice of cipher-mode is then transmitted to the backend to switch between `AES256GCM.java` and `AES256CBC.java`, respectively.
-2. The editor decides whether the custom-rolled cryptography or the fully library-based cryptography is used by toggling the @Qualifier annotation argument between "custom" and "compliant". The argument determines which of the two `CryptographyToggle` interface implementations `EncryptionCustom.java` and `EncryptionCompliant.java` should be used in `UserService.java`.
+1. There is a frontend button-row in account-creation with which the user decides whether to use AES-GCM or AES-CBC as the message cipher mode. The choice of cipher-mode is then transmitted to the backend to switch between `AES256GCM` and `AES256CBC` classes, respectively.
+2. The editor decides whether the custom-rolled cryptography or the fully library-based cryptography is used by toggling the @Qualifier annotation argument between "custom" and "compliant". The argument determines which of the two `CryptographyToggle` interface implementations `EncryptionCustom` and `EncryptionCompliant` should be used in `UserService`.
 
 All Rest API communication to the frontend is found in `src/main/java/controller/UserController.java`.
 
