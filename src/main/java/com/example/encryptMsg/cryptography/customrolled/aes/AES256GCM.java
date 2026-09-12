@@ -32,7 +32,7 @@ public class AES256GCM extends AES256Universal {
 
 
     // GHASH
-    private byte[] galoisHash(byte[] H, byte[] ciphertext, Arena arena) {
+    private byte[] galoisHash(byte[] H, byte[] ciphertext) {
         long[] hLong = byteToLongArr(H);
         long[] accumulatorToReturn = new long[2];
 
@@ -51,16 +51,13 @@ public class AES256GCM extends AES256Universal {
 
         // hashing through padded block
         int remainder = ciphertext.length & 15;
-        if (remainder != 0) {
-            MemorySegment remainderSegment_offHeap = arena.allocate(16);
-            MemorySegment.copy(
-                    ciphertextSegment, blockCount_totalInCiphertext * 16,
-                    remainderSegment_offHeap, 0,
-                    remainder
-            );
+        if (remainder != 0) { // checking whether padding is needed
+            byte[] paddedBlock = new byte[16];
+            System.arraycopy(ciphertext, blockCount_totalInCiphertext * 16, paddedBlock, 0, remainder);
+            MemorySegment remainderSegment = MemorySegment.ofArray(paddedBlock);
 
-            long long0 = remainderSegment_offHeap.get(longLayout_bigEndian, 0L);
-            long long1 = remainderSegment_offHeap.get(longLayout_bigEndian, 8L);
+            long long0 = remainderSegment.get(longLayout_bigEndian, 0L);
+            long long1 = remainderSegment.get(longLayout_bigEndian, 8L);
 
             accumulatorToReturn[0] ^= long0;
             accumulatorToReturn[1] ^= long1;
@@ -105,44 +102,42 @@ public class AES256GCM extends AES256Universal {
 
 
     public byte[] aes256encryptionGCM(byte[] plaintextBytes, int[] expansionArr, byte[] nonce96Bit) {
-        try (Arena arena = Arena.ofConfined()) {
-            byte[] J0 = new byte[16]; // nonce || counter=1
-            byte[] H = rijndael256encrypt(J0, expansionArr); // passing an all-0 byte-array
-            System.arraycopy(nonce96Bit, 0, J0, 0, 12);
-            J0[15] = 1;
-            byte[] J0incremented = J0.clone();
+        byte[] J0 = new byte[16]; // nonce || counter=1
+        byte[] H = rijndael256encrypt(J0, expansionArr); // passing an all-0 byte-array
+        System.arraycopy(nonce96Bit, 0, J0, 0, 12);
+        J0[15] = 1;
+        byte[] J0incremented = J0.clone();
 
-            int counter = 1;
+        int counter = 1;
 
-            byte[] ciphertextBytes = new byte[plaintextBytes.length];
+        byte[] ciphertextBytes = new byte[plaintextBytes.length];
 
-            for (int i = 0; i < plaintextBytes.length; i += 16) {
-                counter++;
-                J0incremented[12] = (byte) (counter >>> 24);
-                J0incremented[13] = (byte) (counter >>> 16);
-                J0incremented[14] = (byte) (counter >>> 8);
-                J0incremented[15] = (byte) counter;
+        for (int i = 0; i < plaintextBytes.length; i += 16) {
+            counter++;
+            J0incremented[12] = (byte) (counter >>> 24);
+            J0incremented[13] = (byte) (counter >>> 16);
+            J0incremented[14] = (byte) (counter >>> 8);
+            J0incremented[15] = (byte) counter;
 
-                byte[] J0incrementedCiphertext = rijndael256encrypt(J0incremented, expansionArr);
+            byte[] J0incrementedCiphertext = rijndael256encrypt(J0incremented, expansionArr);
 
-                int lengthOf_presentBlock = Math.min(16, plaintextBytes.length - i);
-                for (int k = 0; k < lengthOf_presentBlock; k++) {
-                    ciphertextBytes[i + k] = (byte) (plaintextBytes[i + k] ^ J0incrementedCiphertext[k]);
-                }
+            int lengthOf_presentBlock = Math.min(16, plaintextBytes.length - i);
+            for (int k = 0; k < lengthOf_presentBlock; k++) {
+                ciphertextBytes[i + k] = (byte) (plaintextBytes[i + k] ^ J0incrementedCiphertext[k]);
             }
-
-            byte[] ghashBytes = galoisHash(H, ciphertextBytes, arena);
-            byte[] encryptedJ0 = rijndael256encrypt(J0, expansionArr);
-            byte[] tag = new byte[16];
-
-            for (int i = 0; i < 16; i++) {
-                tag[i] = (byte) (ghashBytes[i] ^ encryptedJ0[i]);
-            }
-            byte[] finalOutput = new byte[ciphertextBytes.length + 16];
-            System.arraycopy(ciphertextBytes, 0, finalOutput, 0, ciphertextBytes.length);
-            System.arraycopy(tag, 0, finalOutput, ciphertextBytes.length, 16);
-            return finalOutput;
         }
+
+        byte[] ghashBytes = galoisHash(H, ciphertextBytes);
+        byte[] encryptedJ0 = rijndael256encrypt(J0, expansionArr);
+        byte[] tag = new byte[16];
+
+        for (int i = 0; i < 16; i++) {
+            tag[i] = (byte) (ghashBytes[i] ^ encryptedJ0[i]);
+        }
+        byte[] finalOutput = new byte[ciphertextBytes.length + 16];
+        System.arraycopy(ciphertextBytes, 0, finalOutput, 0, ciphertextBytes.length);
+        System.arraycopy(tag, 0, finalOutput, ciphertextBytes.length, 16);
+        return finalOutput;
     }
     public char[] aes256decryptionGCM(byte[] ciphertextInput, int[] expansionArr, byte[] nonce96Bit) {
         try (Arena arena = Arena.ofConfined()) {

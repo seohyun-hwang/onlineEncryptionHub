@@ -26,7 +26,9 @@ public class EncryptionCompliant implements CryptographyToggle {
     }
 
     @Override
-    public byte[] passwordHashingSHA256(char[] password, byte[] salt) throws Exception {
+    public byte[] passwordHashingSHA256(char[] password, byte[] salt)
+            throws Exception
+    {
         return deriveKeyAES(password, salt).getEncoded();
     }
 

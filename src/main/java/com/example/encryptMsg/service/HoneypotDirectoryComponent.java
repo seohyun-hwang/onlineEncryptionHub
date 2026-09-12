@@ -66,8 +66,8 @@ public class HoneypotDirectoryComponent {
     }
     public String getFileContent(String path) {
         String resolved = resolvePath(path);
-        // defaults to a 'file not found' error
         return fileContents.getOrDefault(resolved, "cat: " + path + ": No such file or directory");
+        // defaults to a 'file not found' error
     }
     public String resolvePath(String path) {
         if (path.startsWith("/")) return path;
