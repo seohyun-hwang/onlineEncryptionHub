@@ -155,7 +155,7 @@ public class AES256GCM extends AES256Universal {
             System.arraycopy(nonce96Bit, 0, J0, 0, 12);
             J0[15] = 1;
 
-            byte[] ghashResult = galoisHash(H, ciphertextBytes, arena);
+            byte[] ghashResult = galoisHash(H, ciphertextBytes);
             byte[] encryptedJ0 = rijndael256encrypt(J0, expansionArr);
             byte[] expectedTagGCM = new byte[16];
             for (int i = 0; i < 16; i++) {
