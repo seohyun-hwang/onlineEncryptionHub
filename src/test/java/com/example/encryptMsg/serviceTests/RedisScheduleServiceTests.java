@@ -3,28 +3,42 @@ package com.example.encryptMsg.serviceTests;
 import com.example.encryptMsg.service.TaskScheduleService;
 import com.example.encryptMsg.service.TaskScheduleService.TaskRecord;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+// ensure that Redis is run, so that this test functions.
+// docker compose up -d redis
 class RedisScheduleServiceTests {
 
     private TaskScheduleService scheduler;
     private JedisPool jedisPool;
+    private static String host = "localhost";
+    private static int port = 6379;
+
+    @BeforeAll
+    static void checkRedisAvailability() {
+        host = System.getenv().getOrDefault("REDIS_HOST", "127.0.0.1");
+        port = Integer.parseInt(System.getenv().getOrDefault("REDIS_PORT", "6379"));
+
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(host, port), 1000);
+        } catch (IOException e) {
+            Assumptions.abort("Redis is unreachable at " + host + ":" + port + ". Skipping integration tests.");
+        }
+    }
 
     @BeforeEach
     void setUp() {
-        String host = "localhost";
-        int port = 6379;
 
         this.jedisPool = new JedisPool(host, port);
         try (Jedis jedis = jedisPool.getResource()) {
