@@ -1,6 +1,6 @@
 Disclaimer: Cryptographic algorithms are built completely from scratch purely for self-educational purposes. Not for production use!!!
 
-Since custom-rolled cryptography is unprofessional, I also included a fully library-based version of the cryptography in `src/main/java/com.example.encryptMsg/cryptogrpahy/EncryptionCompliant.java`. The custom version is in `EncryptionCustom.java`.
+Since custom-rolled cryptography is unprofessional, I also included a fully library-based version of the cryptography in `src/main/java/com.example.encryptMsg/cryptogrpahy/EncryptionLibrary.java`. The custom version is in `EncryptionCustom.java`.
 
 To toggle from the custom-rolled version to the library-based version, go to `src/main/java/com.example.encryptMsg/service/UserService.java`, then find the class constructor and edit `@Qualifier("custom")` to `@Qualifier("compliant")`.
 
@@ -17,6 +17,8 @@ This is a fullstack application; the project files include both the frontend and
 Once all setup is completed, open the project root-directory terminal, then enter `docker compose up --build`. To run the project in the background, instead enter `docker compose up --build -d`.
 
 To shut down the project, enter `docker compose down`.
+
+Redis 7.x runs on `localhost:6379`.
 
 To access the project frontend, enter the URL http://localhost:80/ in your preferred browser.
 
@@ -91,7 +93,7 @@ All unit-tests are found in `src/test/java/com.example.encryptMsg/`. Mockito is 
 It must be noted that all these server-side cybersecurity measures don't really matter if the website isn't run on HTTPS. Having said that, this isn't really an issue on localhost.
 
 ### Backend development tools
-Java 24, SpringBoot 4.1.0, Maven 4.0.0, Jar packaging, Properties configuration
+Java 24, Redis 7, SpringBoot 3.3.4, Maven 4.0.0, Jar packaging, Properties configuration
 
 Key dependencies: Spring Web, Spring Boot DevTools, Spring Data JPA, Spring Web MVC, H2 Database
 

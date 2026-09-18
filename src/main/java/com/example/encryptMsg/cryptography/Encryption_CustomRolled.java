@@ -10,13 +10,13 @@ import java.util.Arrays;
 
 // in this class, every cryptographic algorithm is custom-rolled with no reliance on cryptographic libraries.
 @Service("custom")
-public class EncryptionCustom implements CryptographyToggle {
+public class Encryption_CustomRolled implements CryptographyToggleInterface {
     private final AES256Universal aesUniversal;
     private final AES256GCM aesGcm;
     private final AES256CBC aesCbc;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public EncryptionCustom(AES256Universal aesUniversal, AES256GCM aesGcm, AES256CBC aesCbc) {
+    public Encryption_CustomRolled(AES256Universal aesUniversal, AES256GCM aesGcm, AES256CBC aesCbc) {
         this.aesUniversal = aesUniversal;
         this.aesGcm = aesGcm;
         this.aesCbc = aesCbc;

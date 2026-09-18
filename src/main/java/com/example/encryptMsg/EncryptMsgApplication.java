@@ -7,7 +7,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class EncryptMsgApplication {
 
 	public static void main(String[] args) {
+
 		SpringApplication.run(EncryptMsgApplication.class, args);
+
+
 	}
 
 }

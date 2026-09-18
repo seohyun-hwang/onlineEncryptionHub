@@ -7,13 +7,13 @@ import javax.crypto.spec.*;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 
-// in this class, every cryptographic algorithm relies on cryptographic libraries.
-@Service("compliant")
-public class EncryptionCompliant implements CryptographyToggle {
+// in this class, every cryptographic algorithm relies on java.security or java.crypto libraries.
+@Service("library")
+public class Encryption_LibraryReliant implements CryptographyToggleInterface {
     private final SecureRandom secureRandom = new SecureRandom();
     private final AES256Universal aes256Universal;
 
-    public EncryptionCompliant(AES256Universal aes256Universal) {
+    public Encryption_LibraryReliant(AES256Universal aes256Universal) {
         this.aes256Universal = aes256Universal;
     }
 

@@ -1,6 +1,6 @@
 package com.example.encryptMsg.serviceTests;
 
-import com.example.encryptMsg.cryptography.CryptographyToggle;
+import com.example.encryptMsg.cryptography.CryptographyToggleInterface;
 import com.example.encryptMsg.cryptography.IV_and_Ciphertext;
 import com.example.encryptMsg.model.Account;
 import com.example.encryptMsg.model.Message;
@@ -28,7 +28,7 @@ class UserServiceTests {
     @Mock
     private MessageRepo messageRepo;
     @Mock
-    private CryptographyToggle cryptographyToggle;
+    private CryptographyToggleInterface cryptographyToggleInterface;
     @InjectMocks
     private UserService userService;
 
@@ -47,7 +47,7 @@ class UserServiceTests {
         Account trialAccount = new Account("Patrick Star", new byte[]{1}, new byte[]{2}, new byte[]{3}, "GCM");
 
         when(accountRepo.findByUsername("Patrick Star")).thenReturn(Optional.of(trialAccount));
-        when(cryptographyToggle.passwordCheck(any(), any(), any())).thenReturn(false);
+        when(cryptographyToggleInterface.passwordCheck(any(), any(), any())).thenReturn(false);
 
         CreateMessageResponse result = userService.createMessage("Patrick Star", "Heeyyy".toCharArray(), "wrongPass".toCharArray());
 
@@ -61,8 +61,8 @@ class UserServiceTests {
         IV_and_Ciphertext mockResult = new IV_and_Ciphertext(new byte[]{10, 11}, new byte[]{99, 100});
 
         when(accountRepo.findByUsername("Izzeme Mario")).thenReturn(Optional.of(trialAccount));
-        when(cryptographyToggle.passwordCheck(any(), any(), any())).thenReturn(true);
-        when(cryptographyToggle.encryptionAES(any(), any(), any(), anyString())).thenReturn(mockResult);
+        when(cryptographyToggleInterface.passwordCheck(any(), any(), any())).thenReturn(true);
+        when(cryptographyToggleInterface.encryptionAES(any(), any(), any(), anyString())).thenReturn(mockResult);
 
         CreateMessageResponse response = userService.createMessage("Izzeme Mario", "Yiieeepiyeahh!".toCharArray(), "password".toCharArray());
 

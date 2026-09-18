@@ -17,8 +17,11 @@ public class Account {
     private byte[] passwordSalt; // SHA-256 salt to store account password
     private byte[] expansionSalt; // SHA-256 salt for key-expansion in AES-256 message cipher
     private String ciphermode; // options: GCM, CBC
+    //private byte[] publicKeyPlaintextECC;
+    //private byte[] privateKeyCiphertextECC;
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Message> associatedMessagesList = new ArrayList<>();
+    private List<Message> composedMessagesList = new ArrayList<>();
+    //private List<Message> receivedMessagesList = new ArrayList<>();
 
     public Account() {
     }
@@ -34,20 +37,31 @@ public class Account {
 
 
     // GETTERS
-    public int getAccountId() { return accountId; }
+    public List<Message> getComposedMessagesList() {
+        return composedMessagesList;
+    }
+    public int getAccountId() {
+        return accountId;
+    }
     public String getUsername() {
         return username;
     }
     public byte[] getPasswordHash() {
         return passwordHash;
     }
-    public byte[] getPasswordSalt() { return passwordSalt; }
-    public byte[] getExpansionSalt() { return expansionSalt; }
-    public String getCiphermode() { return ciphermode; }
+    public byte[] getPasswordSalt() {
+        return passwordSalt;
+    }
+    public byte[] getExpansionSalt() {
+        return expansionSalt;
+    }
+    public String getCiphermode() {
+        return ciphermode;
+    }
 
     // SETTERS
     public void addToAssociatedMessagesList(Message message) {
-        associatedMessagesList.add(message);
+        composedMessagesList.add(message);
         message.setAccount(this);
     }
 }

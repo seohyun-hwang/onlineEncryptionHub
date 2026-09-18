@@ -21,15 +21,8 @@ public class SHA256 {
             0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
             0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
     };
-
     private int rightRotation(int operand, int shiftCount) {
         return (operand << (32 - shiftCount)) | (operand >>> shiftCount);
-    }
-    private int chooseSHA(int operand1, int operand2, int operand3) {
-        return (operand1 & operand2) ^ (~operand1 & operand3);
-    }
-    private int majoritySHA(int operand1, int operand2, int operand3) {
-        return (operand1 & operand2) ^ (operand1 & operand3) ^ (operand2 & operand3);
     }
 
     public byte[] sha256(byte[] plaintextUnpadded) {
@@ -93,14 +86,14 @@ public class SHA256 {
                                         ^ rightRotation(variables[4], 11)
                                         ^ rightRotation(variables[4], 25)
                         )
-                                + chooseSHA(variables[4], variables[5], variables[6])
+                                + ((variables[4] & variables[5]) ^ (~variables[4] & variables[6])) // "choose"-function
                                 + hashConstants[i]
                                 + wordArr64[i];
                 int value2 =
                         (rightRotation(variables[0], 2)
                                 ^ rightRotation(variables[0], 13)
                                 ^ rightRotation(variables[0], 22)
-                        ) + majoritySHA(variables[0], variables[1], variables[2]);
+                        ) + (variables[0] & variables[1]) ^ (variables[0] & variables[2]) ^ (variables[1] & variables[2]); // "majority"-function
                 variables[7] = variables[6];
                 variables[6] = variables[5];
                 variables[5] = variables[4];

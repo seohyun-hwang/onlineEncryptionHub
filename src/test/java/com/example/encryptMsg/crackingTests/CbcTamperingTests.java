@@ -1,7 +1,7 @@
 package com.example.encryptMsg.crackingTests;
 
-import com.example.encryptMsg.cryptography.EncryptionCompliant;
-import com.example.encryptMsg.cryptography.EncryptionCustom;
+import com.example.encryptMsg.cryptography.Encryption_LibraryReliant;
+import com.example.encryptMsg.cryptography.Encryption_CustomRolled;
 import com.example.encryptMsg.cryptography.IV_and_Ciphertext;
 import com.example.encryptMsg.cryptography.customrolled.AES256Universal;
 import com.example.encryptMsg.cryptography.customrolled.aes.AES256CBC;
@@ -15,8 +15,8 @@ import java.security.SecureRandom;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CbcTamperingTests {
-    private EncryptionCompliant encryptionCompliant;
-    private EncryptionCustom encryptionCustom;
+    private Encryption_LibraryReliant encryptionLibraryReliant;
+    private Encryption_CustomRolled encryptionCustomRolled;
     private SecureRandom secureRandom;
 
     @BeforeEach
@@ -27,39 +27,39 @@ public class CbcTamperingTests {
         AES256GCM aesGcm = new AES256GCM(sha256);
         AES256CBC aesCbc = new AES256CBC(sha256);
 
-        encryptionCompliant = new EncryptionCompliant(aesUniversal);
-        encryptionCustom = new EncryptionCustom(aesUniversal, aesGcm, aesCbc);
+        encryptionLibraryReliant = new Encryption_LibraryReliant(aesUniversal);
+        encryptionCustomRolled = new Encryption_CustomRolled(aesUniversal, aesGcm, aesCbc);
     }
 
     @Test
-    void custom_AES256CBC_TamperLastBlock_ThrowsInvalidPadding() throws Exception {
+    void customRolled_AES256CBC_TamperLastBlock_ThrowsInvalidPadding() throws Exception {
         char[] plaintext = "AAAAAHHHHHHHHH".toCharArray(); // should be bigger than 16 bytes somehow
         char[] password = "password0123456789".toCharArray();
         byte[] expansionSalt = new byte[32];
         secureRandom.nextBytes(expansionSalt);
 
-        IV_and_Ciphertext encryptedData = encryptionCustom.encryptionAES(plaintext, password, expansionSalt, "CBC");
+        IV_and_Ciphertext encryptedData = encryptionCustomRolled.encryptionAES(plaintext, password, expansionSalt, "CBC");
         byte[] tamperedCiphertext = encryptedData.ciphertext().clone();
 
         tamperedCiphertext[tamperedCiphertext.length - 1] ^= 0x01; // Tampering with the last ciphertext-byte
 
         // PKCS#7 padding validation fails here
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            encryptionCustom.decryptionAES(tamperedCiphertext, encryptedData.iv(), password, expansionSalt, "CBC");
+            encryptionCustomRolled.decryptionAES(tamperedCiphertext, encryptedData.iv(), password, expansionSalt, "CBC");
         });
         assertEquals("Invalid padding", exception.getMessage());
     }
 
     @Test
-    void custom_AES256CBC_TamperFirstBlock_SilentCorruption() throws Exception {
+    void customRolled_AES256CBC_TamperFirstBlock_SilentCorruption() throws Exception {
         char[] plaintextLong = "This text is long enough to exceed 16 bytes.".toCharArray();
         char[] plaintextShort = "<16bytes".toCharArray();
         char[] password = "password0123456789".toCharArray();
         byte[] expansionSalt = new byte[32];
         secureRandom.nextBytes(expansionSalt);
 
-        IV_and_Ciphertext encryptedDataLong = encryptionCustom.encryptionAES(plaintextLong, password, expansionSalt, "CBC");
-        IV_and_Ciphertext encryptedDataShort = encryptionCustom.encryptionAES(plaintextShort, password, expansionSalt, "CBC");
+        IV_and_Ciphertext encryptedDataLong = encryptionCustomRolled.encryptionAES(plaintextLong, password, expansionSalt, "CBC");
+        IV_and_Ciphertext encryptedDataShort = encryptionCustomRolled.encryptionAES(plaintextShort, password, expansionSalt, "CBC");
         byte[] tamperedCiphertextLong = encryptedDataLong.ciphertext().clone();
         byte[] tamperedCiphertextShort = encryptedDataShort.ciphertext().clone();
 
@@ -68,45 +68,45 @@ public class CbcTamperingTests {
         tamperedCiphertextShort[0] ^= 0x01;
 
         // padding is intact if initial plaintext was 16+ bytes; decryption succeeds (technically)
-        char[] decryptedCharsLong = encryptionCustom.decryptionAES(
+        char[] decryptedCharsLong = encryptionCustomRolled.decryptionAES(
                 tamperedCiphertextLong, encryptedDataLong.iv(), password, expansionSalt, "CBC"
         );
         assertFalse(java.util.Arrays.equals(plaintextLong, decryptedCharsLong));
 
         // padding is destroyed if initial plaintext was under 16 bytes (therefore being the last block)
         assertThrows(IllegalArgumentException.class, () -> {
-            encryptionCustom.decryptionAES(tamperedCiphertextShort, encryptedDataLong.iv(), password, expansionSalt, "CBC");
+            encryptionCustomRolled.decryptionAES(tamperedCiphertextShort, encryptedDataLong.iv(), password, expansionSalt, "CBC");
         });
     }
 
     @Test
-    void compliant_AES256CBC_TamperLastBlock_ThrowsBadPadding() throws Exception {
+    void libraryBased_AES256CBC_TamperLastBlock_ThrowsBadPadding() throws Exception {
         char[] plaintext = "This text is long enough to exceed 16 bytes.".toCharArray();
         char[] password = "password0123456789".toCharArray();
         byte[] expansionSalt = new byte[32];
         secureRandom.nextBytes(expansionSalt);
 
-        IV_and_Ciphertext encryptedData = encryptionCompliant.encryptionAES(plaintext, password, expansionSalt, "CBC");
+        IV_and_Ciphertext encryptedData = encryptionLibraryReliant.encryptionAES(plaintext, password, expansionSalt, "CBC");
         byte[] tamperedCiphertext = encryptedData.ciphertext().clone();
 
         tamperedCiphertext[tamperedCiphertext.length - 1] ^= 0x01; // tampering with the first byte
 
         // The native Java library throws a BadPaddingException
         assertThrows(javax.crypto.BadPaddingException.class, () -> {
-            encryptionCompliant.decryptionAES(tamperedCiphertext, encryptedData.iv(), password, expansionSalt, "CBC");
+            encryptionLibraryReliant.decryptionAES(tamperedCiphertext, encryptedData.iv(), password, expansionSalt, "CBC");
         });
     }
 
     @Test
-    void compliant_AES256CBC_TamperFirstBlock_SilentCorruption() throws Exception {
+    void libraryBased_AES256CBC_TamperFirstBlock_SilentCorruption() throws Exception {
         char[] plaintextLong = "This text is long enough to exceed 16 bytes.".toCharArray();
         char[] plaintextShort = "<16bytes".toCharArray();
         char[] password = "password0123456789".toCharArray();
         byte[] expansionSalt = new byte[32];
         secureRandom.nextBytes(expansionSalt);
 
-        IV_and_Ciphertext encryptedDataLong = encryptionCompliant.encryptionAES(plaintextLong, password, expansionSalt, "CBC");
-        IV_and_Ciphertext encryptedDataShort = encryptionCompliant.encryptionAES(plaintextShort, password, expansionSalt, "CBC");
+        IV_and_Ciphertext encryptedDataLong = encryptionLibraryReliant.encryptionAES(plaintextLong, password, expansionSalt, "CBC");
+        IV_and_Ciphertext encryptedDataShort = encryptionLibraryReliant.encryptionAES(plaintextShort, password, expansionSalt, "CBC");
         byte[] tamperedCiphertextLong = encryptedDataLong.ciphertext().clone();
         byte[] tamperedCiphertextShort = encryptedDataShort.ciphertext().clone();
 
@@ -115,14 +115,14 @@ public class CbcTamperingTests {
         tamperedCiphertextShort[0] ^= 0x01;
 
         // padding is intact if initial plaintext was 16+ bytes; decryption succeeds (technically)
-        char[] decryptedCharsLong = encryptionCompliant.decryptionAES(
+        char[] decryptedCharsLong = encryptionLibraryReliant.decryptionAES(
                 tamperedCiphertextLong, encryptedDataLong.iv(), password, expansionSalt, "CBC"
         );
         assertFalse(java.util.Arrays.equals(plaintextLong, decryptedCharsLong));
 
         // padding is destroyed if initial plaintext was under 16 bytes (therefore being the last block)
         assertThrows(javax.crypto.BadPaddingException.class, () -> {
-            encryptionCompliant.decryptionAES(tamperedCiphertextShort, encryptedDataLong.iv(), password, expansionSalt, "CBC");
+            encryptionLibraryReliant.decryptionAES(tamperedCiphertextShort, encryptedDataLong.iv(), password, expansionSalt, "CBC");
         });
     }
 }

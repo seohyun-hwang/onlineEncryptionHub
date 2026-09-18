@@ -1,6 +1,31 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: encryption-hub-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379" # Redis port
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+  postgres:
+    image: postgres:15-alpine
+    container_name: encryption-hub-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=encryptdb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432" # PostgreSQL port
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
   backend:
     build:
       context: .
@@ -10,11 +35,41 @@ services:
     expose:
       - "8080"
     environment:
+      - APP_MODE=api
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JDK_JAVA_OPTIONS=--add-modules jdk.incubator.vector --enable-native-access=ALL-UNNAMED
       - LLM_API_URL=http://host.docker.internal:11434/v1/chat/completions
       - LLM_API_KEY=ollama-local-key
       - LLM_MODEL=llama3
+      - DB_URL=jdbc:postgresql://postgres:5432/encryptdb
+      - DB_USER=postgres
+      - DB_PASS=password
     extra_hosts:
-      - "host.docker.internal:host-gateway" # compatible with Linux, MacOS, and Windows
+      - "host.docker.internal:host-gateway" # compatible with Linux, MacOS, Windows
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0' # restriction to 1 CPU-core
+          memory: 512M
+    environment:
+      - APP_MODE=worker
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JDK_JAVA_OPTIONS=--add-modules jdk.incubator.vector --enable-native-access=ALL-UNNAMED
+    depends_on:
+      - redis
     networks:
       - app-network
 
@@ -25,7 +80,7 @@ services:
     container_name: encryption-hub-frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "80:80" # Docker port
     depends_on:
       - backend
     networks:
@@ -34,3 +89,7 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  redis-data:
+  postgres-data:

@@ -1,6 +1,6 @@
 package com.example.encryptMsg.service;
 
-import com.example.encryptMsg.cryptography.CryptographyToggle;
+import com.example.encryptMsg.cryptography.CryptographyToggleInterface;
 import com.example.encryptMsg.cryptography.IV_and_Ciphertext;
 import com.example.encryptMsg.model.*;
 import com.example.encryptMsg.payload.CreateMessageResponse;
@@ -15,7 +15,7 @@ import java.util.*;
 public class UserService {
     private final AccountRepo accountRepo;
     private final MessageRepo messageRepo;
-    private final CryptographyToggle cryptographyToggle;
+    private final CryptographyToggleInterface cryptographyToggleInterface;
     private static final SecureRandom secureRandom = new SecureRandom();
 
     public UserService(
@@ -25,13 +25,13 @@ public class UserService {
             /*
             // the @Qualifier argument is "custom" by default.
             // qualifier argument is "custom" --> my custom cryptography code is activated.
-            // qualifier argument is "compliant" --> library-based cryptography code is activated.
+            // qualifier argument is "library" --> library-based cryptography code is activated.
              */
-            @Qualifier("custom") CryptographyToggle cryptographyToggle)
+            @Qualifier("custom") CryptographyToggleInterface cryptographyToggleInterface)
     {
         this.accountRepo = accountRepo;
         this.messageRepo = messageRepo;
-        this.cryptographyToggle = cryptographyToggle;
+        this.cryptographyToggleInterface = cryptographyToggleInterface;
     }
 
     public int createAccount(String username, char[] password, String ciphermode) throws Exception {
@@ -43,7 +43,7 @@ public class UserService {
         try {
             Account newAccount = new Account(
                     username,
-                    cryptographyToggle.passwordHashingSHA256(password, passwordSalt),
+                    cryptographyToggleInterface.passwordHashingSHA256(password, passwordSalt),
                     passwordSalt,
                     expansionSalt,
                     ciphermode
@@ -59,10 +59,10 @@ public class UserService {
     public CreateMessageResponse createMessage(String username, char[] messagePlaintext, char[] password) throws Exception {
         try {
             Account account = accountRepo.findByUsername(username).orElse(null);
-            if (account == null || !cryptographyToggle.passwordCheck(password, account.getPasswordSalt(), account.getPasswordHash())) {
+            if (account == null || !cryptographyToggleInterface.passwordCheck(password, account.getPasswordSalt(), account.getPasswordHash())) {
                 return null;
             }
-            IV_and_Ciphertext result = cryptographyToggle.encryptionAES(
+            IV_and_Ciphertext result = cryptographyToggleInterface.encryptionAES(
                     messagePlaintext,
                     password,
                     account.getExpansionSalt(),
@@ -84,7 +84,7 @@ public class UserService {
         try {
             Account account = accountRepo.findByUsername(username).orElse(null);
 
-            if (account == null || !cryptographyToggle.passwordCheck(password, account.getPasswordSalt(), account.getPasswordHash())) {
+            if (account == null || !cryptographyToggleInterface.passwordCheck(password, account.getPasswordSalt(), account.getPasswordHash())) {
                 return 0;
             }
 
@@ -102,12 +102,12 @@ public class UserService {
         try {
             Account account = accountRepo.findByUsername(username).orElse(null);
 
-            if (account == null || !cryptographyToggle.passwordCheck(password, account.getPasswordSalt(), account.getPasswordHash())) {
+            if (account == null || !cryptographyToggleInterface.passwordCheck(password, account.getPasswordSalt(), account.getPasswordHash())) {
                 return null;
             }
 
             for (Message message : messageRepo.findAllByAccount(account)) {
-                char[] plaintextChars = cryptographyToggle.decryptionAES(
+                char[] plaintextChars = cryptographyToggleInterface.decryptionAES(
                         message.getMessageCiphertext(),
                         message.getInitializationVector(),
                         password,
@@ -128,7 +128,7 @@ public class UserService {
         try {
             Account account = accountRepo.findByUsername(username).orElse(null);
 
-            if (account == null || !cryptographyToggle.passwordCheck(password, account.getPasswordSalt(), account.getPasswordHash())) {
+            if (account == null || !cryptographyToggleInterface.passwordCheck(password, account.getPasswordSalt(), account.getPasswordHash())) {
                 return false;
             }
             Message message = getMessageById(messageId);
