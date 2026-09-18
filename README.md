@@ -95,7 +95,7 @@ It must be noted that all these server-side cybersecurity measures don't really 
 ### Backend development tools
 Java 24, Redis 7, SpringBoot 3.3.4, Maven 4.0.0, Jar packaging, Properties configuration
 
-Key dependencies: Spring Web, Spring Boot DevTools, Spring Data JPA, Spring Web MVC, H2 Database
+Key dependencies: Spring Web, Spring Boot DevTools, Spring Data JPA, Spring Web MVC, PostgreSQL Database
 
 Key plugins: Maven Compiler Plugin, Maven Surefire Plugin, Eirslett Frontend Maven 1.15.1, Maven Resources node 24.12.0 npm 10.2.4
 
