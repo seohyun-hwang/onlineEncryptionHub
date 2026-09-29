@@ -16,7 +16,7 @@ public class DeleteMessageRequest {
     @JsonDeserialize(using = CharArrDeserialization.class)
     private char[] password;
 
-    DeleteMessageRequest() {
+    public DeleteMessageRequest() {
 
     }
 

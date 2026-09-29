@@ -12,13 +12,13 @@ import java.io.IOException;
  */
 public class CharArrDeserialization extends JsonDeserializer<char[]> {
     @Override
-    public char[] deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        char[] textBuffer = p.getTextCharacters();
-        int textLength = p.getTextLength();
+    public char[] deserialize(JsonParser parser, DeserializationContext context) throws IOException {
+        char[] textBuffer = parser.getTextCharacters();
+        int textLength = parser.getTextLength();
 
         char[] toReturn = new char[textLength];
         System.arraycopy(
-                textBuffer, p.getTextOffset(),
+                textBuffer, parser.getTextOffset(),
                 toReturn, 0,
                 textLength
         );

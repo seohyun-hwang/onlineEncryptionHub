@@ -17,7 +17,7 @@ public class CreateMessageRequest {
     @JsonDeserialize(using = CharArrDeserialization.class)
     private char[] password;
 
-    CreateMessageRequest() {
+    public CreateMessageRequest() {
 
     }
 

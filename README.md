@@ -93,7 +93,7 @@ All unit-tests are found in `src/test/java/com.example.encryptMsg/`. Mockito is 
 It must be noted that all these server-side cybersecurity measures don't really matter if the website isn't run on HTTPS. Having said that, this isn't really an issue on localhost.
 
 ### Backend development tools
-Java 24, Redis 7, SpringBoot 3.3.4, Maven 4.0.0, Jar packaging, Properties configuration
+Java 24, Redis 7, SpringBoot 4.1.0, Maven 4.0.0, Jar packaging, Properties configuration
 
 Key dependencies: Spring Web, Spring Boot DevTools, Spring Data JPA, Spring Web MVC, PostgreSQL Database
 
