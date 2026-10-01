@@ -2,7 +2,7 @@ Disclaimer: Cryptographic algorithms are built completely from scratch purely fo
 
 Since custom-rolled cryptography is unprofessional, I also included a fully library-based version of the cryptography in `src/main/java/com.example.encryptMsg/cryptogrpahy/EncryptionLibrary.java`. The custom version is in `EncryptionCustom.java`.
 
-To toggle from the custom-rolled version to the library-based version, go to `src/main/java/com.example.encryptMsg/service/UserService.java`, then find the class constructor and edit `@Qualifier("custom")` to `@Qualifier("compliant")`.
+To toggle from the custom-rolled version to the library-based version, go to `src/main/java/com.example.encryptMsg/service/UserService.java`, then find the class constructor and edit `@Qualifier("custom")` to `@Qualifier("library")`.
 
 ## Running the project
 
@@ -12,7 +12,7 @@ This is a fullstack application; the project files include both the frontend and
 **Docker** and **Ollama** must be run simultaneously with the project.
 - Locally-installed applications: Docker, Ollama 
 - Docker is included to run both simultaneously with all required file dependencies, but this means that Docker itself must be installed locally on the device that runs this project. 
-- Meta's Llama 3 is the LLM used for this project. Ollama should be installed and run so that the project can access Llama 3.
+- Meta's Llama 3 is the LLM used for this project. Ollama should be installed and run so that the project can access Llama.
 
 Once all setup is completed, open the project root-directory terminal, then enter `docker compose up --build`. To run the project in the background, instead enter `docker compose up --build -d`.
 
@@ -84,7 +84,7 @@ Additional protection implemented against:
 
 Strategy patterns (loosely-coupled):
 1. There is a frontend button-row in account-creation with which the user decides whether to use AES-GCM or AES-CBC as the message cipher mode. The choice of cipher-mode is then transmitted to the backend to switch between `AES256GCM` and `AES256CBC` classes, respectively.
-2. The editor decides whether the custom-rolled cryptography or the fully library-based cryptography is used by toggling the @Qualifier annotation argument between "custom" and "compliant". The argument determines which of the two `CryptographyToggle` interface implementations `EncryptionCustom` and `EncryptionCompliant` should be used in `UserService`.
+2. The editor decides whether the custom-rolled cryptography or the fully library-based cryptography is used by toggling the @Qualifier annotation argument between "custom" and "library". The argument determines which of the two `CryptographyToggle` interface implementations `Encryption_CustomRolled` and `Encryption_LibraryReliant` should be used in `UserService`.
 
 All Rest API communication to the frontend is found in `src/main/java/controller/UserController.java`.
 
