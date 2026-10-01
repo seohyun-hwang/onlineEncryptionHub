@@ -4,7 +4,6 @@ import com.example.encryptMsg.cryptography.customrolled.AES256Universal;
 import com.example.encryptMsg.cryptography.customrolled.sha.SHA256;
 import org.springframework.stereotype.Service;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 @Service
@@ -140,50 +139,48 @@ public class AES256GCM extends AES256Universal {
         return finalOutput;
     }
     public char[] aes256decryptionGCM(byte[] ciphertextInput, int[] expansionArr, byte[] nonce96Bit) {
-        try (Arena arena = Arena.ofConfined()) {
-            if (ciphertextInput.length < 16) throw new IllegalArgumentException("There are too few ciphertext bytes for a GCM tag to possibly exist.");
+        if (ciphertextInput.length < 16) throw new IllegalArgumentException("There are too few ciphertext bytes for a GCM tag to possibly exist.");
 
-            int ciphertextByteCount = ciphertextInput.length - 16;
-            byte[] ciphertextBytes = new byte[ciphertextByteCount];
-            byte[] inputTagGCM = new byte[16];
-            System.arraycopy(ciphertextInput, 0, ciphertextBytes, 0, ciphertextByteCount);
-            System.arraycopy(ciphertextInput, ciphertextByteCount, inputTagGCM, 0, 16);
+        int ciphertextByteCount = ciphertextInput.length - 16;
+        byte[] ciphertextBytes = new byte[ciphertextByteCount];
+        byte[] inputTagGCM = new byte[16];
+        System.arraycopy(ciphertextInput, 0, ciphertextBytes, 0, ciphertextByteCount);
+        System.arraycopy(ciphertextInput, ciphertextByteCount, inputTagGCM, 0, 16);
 
-            byte[] H = rijndael256encrypt(new byte[16], expansionArr);
+        byte[] H = rijndael256encrypt(new byte[16], expansionArr);
 
-            byte[] J0 = new byte[16]; // nonce || counter=1
-            System.arraycopy(nonce96Bit, 0, J0, 0, 12);
-            J0[15] = 1;
+        byte[] J0 = new byte[16]; // nonce || counter=1
+        System.arraycopy(nonce96Bit, 0, J0, 0, 12);
+        J0[15] = 1;
 
-            byte[] ghashResult = galoisHash(H, ciphertextBytes);
-            byte[] encryptedJ0 = rijndael256encrypt(J0, expansionArr);
-            byte[] expectedTagGCM = new byte[16];
-            for (int i = 0; i < 16; i++) {
-                expectedTagGCM[i] = (byte) (ghashResult[i] ^ encryptedJ0[i]);
-            }
-
-            if (!compareByteArrays_constantTime(expectedTagGCM, inputTagGCM)) throw new IllegalArgumentException("Message tampered or wrong password!");
-
-            byte[] J0incremented = J0.clone();
-            int counter = 1;
-            byte[] plaintextBytes = new byte[ciphertextByteCount];
-
-            for (int i = 0; i < ciphertextByteCount; i += 16) {
-                counter++;
-                J0incremented[12] = (byte) (counter >>> 24);
-                J0incremented[13] = (byte) (counter >>> 16);
-                J0incremented[14] = (byte) (counter >>> 8);
-                J0incremented[15] = (byte) counter;
-
-                byte[] J0incrementedCiphertext = rijndael256encrypt(J0incremented, expansionArr);
-
-                int lengthOf_presentBlock = Math.min(16, ciphertextBytes.length - i);
-                for (int k = 0; k < lengthOf_presentBlock; k++) {
-                    plaintextBytes[i + k] = (byte) (ciphertextBytes[i + k] ^ J0incrementedCiphertext[k]);
-                }
-            }
-
-            return byteToCharArr(plaintextBytes);
+        byte[] ghashResult = galoisHash(H, ciphertextBytes);
+        byte[] encryptedJ0 = rijndael256encrypt(J0, expansionArr);
+        byte[] expectedTagGCM = new byte[16];
+        for (int i = 0; i < 16; i++) {
+            expectedTagGCM[i] = (byte) (ghashResult[i] ^ encryptedJ0[i]);
         }
+
+        if (!compareByteArrays_constantTime(expectedTagGCM, inputTagGCM)) throw new IllegalArgumentException("Message tampered or wrong password!");
+
+        byte[] J0incremented = J0.clone();
+        int counter = 1;
+        byte[] plaintextBytes = new byte[ciphertextByteCount];
+
+        for (int i = 0; i < ciphertextByteCount; i += 16) {
+            counter++;
+            J0incremented[12] = (byte) (counter >>> 24);
+            J0incremented[13] = (byte) (counter >>> 16);
+            J0incremented[14] = (byte) (counter >>> 8);
+            J0incremented[15] = (byte) counter;
+
+            byte[] J0incrementedCiphertext = rijndael256encrypt(J0incremented, expansionArr);
+
+            int lengthOf_presentBlock = Math.min(16, ciphertextBytes.length - i);
+            for (int k = 0; k < lengthOf_presentBlock; k++) {
+                plaintextBytes[i + k] = (byte) (ciphertextBytes[i + k] ^ J0incrementedCiphertext[k]);
+            }
+        }
+
+        return byteToCharArr(plaintextBytes);
     }
 }

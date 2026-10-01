@@ -17,7 +17,6 @@ public class TaskScheduleService { // Redis-based task scheduler
 
     private static final String QUEUE_PENDING = "tasks:pending";
     private static final String ZSET_IN_FLIGHT = "tasks:in_flight";
-    private static final int LEASE_DURATION_SECONDS = 30;
 
     public TaskScheduleService(
             @Value("${REDIS_HOST:localhost}") String redisHost,
@@ -47,7 +46,7 @@ public class TaskScheduleService { // Redis-based task scheduler
             }
 
             String taskId = popped.get(1);
-            long leaseExpiry = Instant.now().getEpochSecond() + LEASE_DURATION_SECONDS;
+            long leaseExpiry = Instant.now().getEpochSecond() + 30;
 
             jedis.zadd(ZSET_IN_FLIGHT, leaseExpiry, taskId);
             jedis.hset("task:" + taskId, Map.of(
