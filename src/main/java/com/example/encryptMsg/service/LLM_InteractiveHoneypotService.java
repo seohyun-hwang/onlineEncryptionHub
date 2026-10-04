@@ -1,8 +1,10 @@
 package com.example.encryptMsg.service;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -11,39 +13,51 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@Profile("!worker")
 public class LLM_InteractiveHoneypotService {
 
     // the API key does not really matter for Llama 3, as it is serviced for free.
     @Value("${llm.api.key:${LLM_API_KEY:Ollama-local}}")
-    private String apiKey;
+    private static String apiKey;
 
     @Value("${llm.api.url:${LLM_API_URL:http://host.docker.internal:11434/v1/chat/completions}}")
-    private String apiUrl;
+    private static String apiUrl;
 
     @Value("${llm.model:${LLM_MODEL:llama3}}")
-    private String modelName;
+    private static String modelName;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    @Value("${APP_MODE:api}")
+    private static String appMode;
+
+    private static final RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
     private HoneypotDirectoryComponent honeypotDirectory; // LLM cache
 
-    // the constructor starts the LLM in the background so that its first response doesn't take forever
+    // a function for starting the LLM in the background immediatley upon project start so that its first response doesn't take forever
     // called in the main class "EncryptMsgApplication"
-    public LLM_InteractiveHoneypotService() {
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", modelName);
-        requestBody.put("temperature", 0);
-        requestBody.put("messages", List.of(
-                Map.of("role", "system", "content", "."),
-                Map.of("role", "user", "content", ".")
-        ));
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey);
+    @PostConstruct
+    public static void warmUpLlm() {
+        if (!"api".equalsIgnoreCase(appMode)) {
+            return;
+        }
+        try {
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", modelName);
+            requestBody.put("temperature", 0);
+            requestBody.put("messages", List.of(
+                    Map.of("role", "system", "content", "."),
+                    Map.of("role", "user", "content", ".")
+            ));
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(apiKey);
 
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-        restTemplate.postForEntity(apiUrl, entity, Map.class);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            restTemplate.postForEntity(apiUrl, entity, Map.class);
+        } catch (Exception e) {
+            System.out.println("LLM warmup skipped (service unavailable): " + e.getMessage());
+        }
     }
 
     public String returnDistractionResponse(String attackerInput) {

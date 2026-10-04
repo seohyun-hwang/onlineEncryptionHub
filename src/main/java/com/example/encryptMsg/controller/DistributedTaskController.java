@@ -1,7 +1,7 @@
 package com.example.encryptMsg.controller;
 
 import com.example.encryptMsg.service.TaskScheduleService;
-import com.example.encryptMsg.service.TaskScheduleService;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,6 +10,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/tasks")
+@Profile("!worker")
 public class DistributedTaskController {
 
     private final TaskScheduleService scheduler;

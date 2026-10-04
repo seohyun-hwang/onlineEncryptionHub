@@ -1,6 +1,7 @@
 package com.example.encryptMsg.service;
 
 import com.example.encryptMsg.grpc.SessionTelemetry;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -12,6 +13,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@Profile("!worker")
 public class TelemetryService {
 
     private final JedisPool jedisPool;

@@ -5,8 +5,10 @@ import io.grpc.ManagedChannelBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
+@Profile("!worker")
 public class GrpcConfig {
     @Value("${GRPC_CLASSIFIER_HOST:localhost}")
     private String host;

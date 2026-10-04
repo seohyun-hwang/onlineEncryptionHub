@@ -27,15 +27,24 @@ public class TaskWorkerComponent implements CommandLineRunner {
 
                 if (taskOpt.isPresent()) {
                     var task = taskOpt.get();
-                    System.out.println("Task " + task.id() + "claimed by worker " + workerId + ".");
+                    System.out.println("Task " + task.id() + " claimed by worker " + workerId + ".");
 
                     Thread.sleep(300);
                     scheduler.completeTask(task.id(), "encrypted_" + task.payload().hashCode());
                     System.out.println("Task " + task.id() + " completed.");
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.out.println("Worker " + workerId + " interrupted; shutting down.");
             } catch (Exception e) {
                 System.out.println("Worker " + workerId + " failed to execute task.");
-                System.err.print(e.getMessage());
+                System.err.println(e.getMessage());
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    System.out.println("Worker " + workerId + " interrupted; shutting down.");
+                }
             }
         }
     }

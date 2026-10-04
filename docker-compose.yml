@@ -75,6 +75,7 @@ services:
           memory: 512M
     environment:
       - APP_MODE=worker
+      - SPRING_PROFILES_ACTIVE=worker
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JDK_JAVA_OPTIONS=--add-modules jdk.incubator.vector --enable-native-access=ALL-UNNAMED

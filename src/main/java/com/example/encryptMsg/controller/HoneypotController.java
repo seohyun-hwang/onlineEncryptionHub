@@ -3,6 +3,7 @@ package com.example.encryptMsg.controller;
 import com.example.encryptMsg.service.LLM_InteractiveHoneypotService;
 import com.example.encryptMsg.service.TelemetryService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/honeypot")
+@Profile("!worker")
 public class HoneypotController {
 
     private final BotClassifierGrpc.BotClassifierBlockingStub classifierStub;

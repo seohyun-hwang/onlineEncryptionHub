@@ -6,12 +6,14 @@ import com.example.encryptMsg.model.*;
 import com.example.encryptMsg.payload.CreateMessageResponse;
 import com.example.encryptMsg.repository.*;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 import java.security.SecureRandom;
 import java.util.*;
 
 @Service
+@Profile("!worker")
 public class UserService {
     private final AccountRepo accountRepo;
     private final MessageRepo messageRepo;
