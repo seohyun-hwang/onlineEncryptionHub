@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { API_BASE_URL, type Status } from '../Types';
 import { StatusMessage, useStatusTimer, refreshCursor } from '../Utils';
 
-export function DeceptionTerminal() {
+export function HoneypotTerminal() {
   const [commandInput, setCommandInput] = useState('');
   const [terminalHistory, setTerminalHistory] = useState<Array<{ sender: 'user' | 'system'; text: string }>>([
     { sender: 'system', text: 'Welcome to the onsite server terminal reserved for administrative personnel.' },
@@ -24,7 +24,7 @@ export function DeceptionTerminal() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/deception/admin`, {
+      const response = await fetch(`${API_BASE_URL}/honeypot/admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ command: userCmd })

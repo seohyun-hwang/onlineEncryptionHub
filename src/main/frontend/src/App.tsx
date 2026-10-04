@@ -7,12 +7,12 @@ import type { Tab } from './Types';
 import { refreshCursor } from './Utils';
 import { CreateAccount, DeleteAccount } from './components/AccountComponents';
 import { CreateMessage, FetchMessages, DeleteMessage } from './components/MessageComponents';
-import { DeceptionTerminal } from './components/DeceptionComponents';
+import { HoneypotTerminal } from './components/HoneypotComponents';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('accounts');
   const [globalStatusLoading, setGlobalStatusLoading] = useState(false);
-  const [showDeceptionTerminal, setShowDeceptionTerminal] = useState(false);
+  const [showHoneypotTerminal, setShowHoneypotTerminal] = useState(false);
 
   useEffect(() => {refreshCursor()}, [globalStatusLoading])
 
@@ -25,11 +25,11 @@ export default function App() {
       <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
         <button
           onClick={(e) => {
-              setShowDeceptionTerminal(!showDeceptionTerminal);
+              setShowHoneypotTerminal(!showHoneypotTerminal);
               e.currentTarget.blur();
               }}
           style={{
-            background: showDeceptionTerminal ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
+            background: showHoneypotTerminal ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
             border: '1px dashed var(--danger)',
             color: 'var(--danger)',
             padding: '0.5rem 1rem',
@@ -41,15 +41,15 @@ export default function App() {
             transition: 'all 0.2s'
           }}
         >
-          {showDeceptionTerminal ? 'Close terminal' : 'LLM Honeypot Demonstration'}
+          {showHoneypotTerminal ? 'Close terminal' : 'LLM Honeypot Demonstration'}
         </button>
         <p style={{ fontSize: '0.8rem', color: 'gray', maxWidth: '650px', margin: '0 auto', lineHeight: '1.4' }}>
           <em><strong>Clarification:</strong> In actual production, this interactive deception terminal is completely hidden from the UI. In a real scenario, it would exist solely as an unlinked endpoint (<code>/api/admin</code>) to trap unauthorized API reconnaissance. It is exposed here purely for demonstration.</em>
         </p>
       </div>
 
-      {showDeceptionTerminal ? (
-        <DeceptionTerminal />
+      {showHoneypotTerminal ? (
+        <HoneypotTerminal />
       ) : (
         <>
           <div className="tabs">

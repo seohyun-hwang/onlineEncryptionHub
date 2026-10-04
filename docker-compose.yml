@@ -26,6 +26,16 @@ services:
     networks:
       - app-network
 
+  classifier:
+    build:
+      context: ./python_interpreter/classifier
+      dockerfile: Dockerfile.classifier
+    container_name: encryption-hub-classifier
+    restart: unless-stopped
+    expose:
+      - "50051" # gRPC port
+    networks:
+      - app-network
   backend:
     build:
       context: .

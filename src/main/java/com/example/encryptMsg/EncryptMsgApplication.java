@@ -1,5 +1,6 @@
 package com.example.encryptMsg;
 
+import com.example.encryptMsg.service.LLM_InteractiveHoneypotService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -9,8 +10,6 @@ public class EncryptMsgApplication {
 	public static void main(String[] args) {
 
 		SpringApplication.run(EncryptMsgApplication.class, args);
-
-
 	}
 
 }

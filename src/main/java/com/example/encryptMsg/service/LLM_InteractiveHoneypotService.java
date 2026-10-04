@@ -28,6 +28,24 @@ public class LLM_InteractiveHoneypotService {
     @Autowired
     private HoneypotDirectoryComponent honeypotDirectory; // LLM cache
 
+    // the constructor starts the LLM in the background so that its first response doesn't take forever
+    // called in the main class "EncryptMsgApplication"
+    public LLM_InteractiveHoneypotService() {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", modelName);
+        requestBody.put("temperature", 0);
+        requestBody.put("messages", List.of(
+                Map.of("role", "system", "content", "."),
+                Map.of("role", "user", "content", ".")
+        ));
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(apiKey);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        restTemplate.postForEntity(apiUrl, entity, Map.class);
+    }
+
     public String returnDistractionResponse(String attackerInput) {
         attackerInput = attackerInput.trim();
         System.out.println("[SECURITY AUDIT]: " + attackerInput);
@@ -74,10 +92,10 @@ public class LLM_InteractiveHoneypotService {
         }
 
         // For nondeterministic demands, the LLM is activated.
-        return callLlama3_givenVirtualState(attackerInput);
+        return callLlM_afterStart(attackerInput);
     }
 
-    private String callLlama3_givenVirtualState(String attackerInput) {
+    private String callLlM_afterStart(String attackerInput) {
         String systemPrompt =
                 "You are the stdout stream of an unprivileged Linux BASH terminal. " +
                 "You do not possess a human persona. Do not explain your output. Do not apologize. Do not include markdown code blocks like ```bash. " +

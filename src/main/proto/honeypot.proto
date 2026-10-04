@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.example.encryptMsg.grpc";
+
+service BotClassifier {
+  rpc ClassifyTraffic (SessionTelemetry) returns (PredictionResult);
+}
+
+message SessionTelemetry {
+  double request_rate = 1;
+  double time_variance = 2;
+  double invalid_path_ratio = 3;
+  double payload_entropy = 4;
+}
+
+message PredictionResult {
+  bool is_bot = 1;
+  double bot_probability = 2;
+}
