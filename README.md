@@ -12,7 +12,7 @@ This is a fullstack application; the project files include both the frontend and
 **Docker** and **Ollama** must be run simultaneously with the project.
 - Locally-installed applications: Docker, Ollama 
 - Docker is included to run both simultaneously with all required file dependencies, but this means that Docker itself must be installed locally on the device that runs this project. 
-- Meta's Llama 3 is the LLM used for this project. Ollama should be installed and run so that the project can access Llama.
+- Meta's Llama 3.2 is the LLM used for this project. Ollama should be installed and run so that the project can access Llama.
 
 Once all setup is completed, open the project root-directory terminal, then enter `docker compose up --build`. To run the project in the background, instead enter `docker compose up --build -d`.
 
@@ -95,12 +95,17 @@ It must be noted that all these server-side cybersecurity measures don't really 
 ### Backend development tools
 Java 24, Redis 7, SpringBoot 4.1.0, Maven 4.0.0, Jar packaging, Properties configuration
 
+Ollama, Llama 3.2 (3B parameters, 2.0GB storage, 4-8GB RAM)
+
 Key dependencies: Spring Web, Spring Boot DevTools, Spring Data JPA, Spring Web MVC, PostgreSQL Database
 
 Key plugins: Maven Compiler Plugin, Maven Surefire Plugin, Eirslett Frontend Maven 1.15.1, Maven Resources node 24.12.0 npm 10.2.4
 
 ### Frontend development tools
-TypeScript 6.0.2, React 19.2.8, Vite 8.2.2
+TypeScript 6.0.2, React 19.2.8, Vite 8.2.2, Node.js, Next.js
+
+### Cloud deployment tools
+Vercel (frontend deployment), Oracle Cloud Infrastructure (backend deployment), Cloudflare (secure frontend-backend communication)
 
 ### NIST documentation
 I did my best to design my SHA-256 and AES-256 algorithms in a manner that is faithful to the official documentation by the National Institute of Standards and Technology (NIST).
