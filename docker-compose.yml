@@ -35,6 +35,16 @@ services:
       - "50051" # gRPC port
     networks:
       - app-network
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434" # Ollama port
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - app-network
 
   backend:
     build:
@@ -49,9 +59,9 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JDK_JAVA_OPTIONS=--add-modules jdk.incubator.vector --enable-native-access=ALL-UNNAMED
-      - LLM_API_URL=http://host.docker.internal:11434/v1/chat/completions
+      - LLM_API_URL=http://ollama:11434/v1/chat/completions
       - LLM_API_KEY=ollama-local-key
-      - LLM_MODEL=llama3:latest
+      - LLM_MODEL=llama3.2
       - DB_URL=jdbc:postgresql://postgres:5432/encryptdb
       - DB_USER=postgres
       - DB_PASS=password
@@ -63,6 +73,7 @@ services:
       - redis
       - postgres
       - classifier
+      - ollama
     networks:
       - app-network
 
@@ -82,9 +93,9 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JDK_JAVA_OPTIONS=--add-modules jdk.incubator.vector --enable-native-access=ALL-UNNAMED
-      - LLM_API_URL=http://host.docker.internal:11434/v1/chat/completions
+      - LLM_API_URL=http://ollama:11434/v1/chat/completions
       - LLM_API_KEY=ollama-local-key
-      - LLM_MODEL=llama3:latest
+      - LLM_MODEL=llama3.2
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -112,3 +123,4 @@ networks:
 volumes:
   redis-data:
   postgres-data:
+  ollama_data:
