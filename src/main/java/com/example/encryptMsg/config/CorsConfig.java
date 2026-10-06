@@ -1,28 +1,33 @@
 package com.example.encryptMsg.config;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.List;
 
 @Configuration
-@Profile("!worker")
-public class CorsConfig implements WebMvcConfigurer {
-    // CORS: Cross-Origin Resource Sharing
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
-                // Port 3000: Create-React-App default
-                // Port 5173: Vite default
-                // Port 3000: Next.js default
-                .allowedOrigins(
-                        "http://localhost:3000",
-                        "http://localhost:5173",
-                        "http://localhost:3000",
-                        "https://online-encryption-hub.vercel.app"
-                )
-                .allowedMethods("POST" /*, "GET", "PUT", "DELETE", "OPTIONS"*/)
-                .allowedHeaders("*")
-                .allowCredentials(true);
+public class CorsConfig {
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+
+        // Allow Vercel frontend origins and local development
+        config.setAllowedOriginPatterns(List.of(
+                "https://online-encryption-hub.vercel.app",
+                "https://*.vercel.app",
+                "http://localhost:3000",
+                "http://localhost:5173"
+        ));
+
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }
