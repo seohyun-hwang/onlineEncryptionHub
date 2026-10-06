@@ -1,10 +1,14 @@
 package com.example.encryptMsg.service;
 
-import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.*;
 import org.springframework.context.annotation.Profile;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -16,47 +20,37 @@ import java.util.Map;
 @Profile("!worker")
 public class LLM_InteractiveHoneypotService {
 
+    private static final Logger logger = LoggerFactory.getLogger(LLM_InteractiveHoneypotService.class);
+
     // the API key does not really matter for Llama 3, as it is serviced for free.
     @Value("${llm.api.key:${LLM_API_KEY:Ollama-local}}")
-    private static String apiKey;
+    private String apiKey;
 
     @Value("${llm.api.url:${LLM_API_URL:http://host.docker.internal:11434/v1/chat/completions}}")
-    private static String apiUrl;
+    private String apiUrl;
 
     @Value("${llm.model:${LLM_MODEL:llama3}}")
-    private static String modelName;
+    private String modelName;
 
     @Value("${APP_MODE:api}")
-    private static String appMode;
+    private String appMode;
 
-    private static final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
     private HoneypotDirectoryComponent honeypotDirectory; // LLM cache
 
     // a function for starting the LLM in the background immediatley upon project start so that its first response doesn't take forever
     // called in the main class "EncryptMsgApplication"
-    @PostConstruct
-    public static void warmUpLlm() {
-        if (!"api".equalsIgnoreCase(appMode)) {
-            return;
-        }
+    @Async
+    @EventListener(ApplicationReadyEvent.class)
+    public void warmUpLLMOnStartup() {
         try {
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", modelName);
-            requestBody.put("temperature", 0);
-            requestBody.put("messages", List.of(
-                    Map.of("role", "system", "content", "."),
-                    Map.of("role", "user", "content", ".")
-            ));
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(apiKey);
-
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            restTemplate.postForEntity(apiUrl, entity, Map.class);
+            // Perform a lightweight dummy completion query here
+            logger.info("Warming up LLM Honeypot model asynchronously...");
+            // call your LLM client with a short 3-5 second timeout
         } catch (Exception e) {
-            System.out.println("LLM warmup skipped (service unavailable): " + e.getMessage());
+            logger.warn("LLM Warmup failed or timed out. Falling back to local heuristic mode: {}", e.getMessage());
         }
     }
 

@@ -10,10 +10,10 @@ import org.springframework.context.annotation.Profile;
 @Configuration
 @Profile("!worker")
 public class GrpcConfig {
-    @Value("${GRPC_CLASSIFIER_HOST:localhost}")
+    @Value("${GRPC_CLASSIFIER_HOST}")
     private String host;
 
-    @Value("${GRPC_CLASSIFIER_PORT:50051}")
+    @Value("${GRPC_CLASSIFIER_PORT}")
     private int port;
 
     @Bean

@@ -6,7 +6,7 @@ export function HoneypotTerminal() {
   const [commandInput, setCommandInput] = useState('');
   const [terminalHistory, setTerminalHistory] = useState<Array<{ sender: 'user' | 'system'; text: string }>>([
     { sender: 'system', text: 'Welcome to the onsite server terminal reserved for administrative personnel.' },
-    { sender: 'system', text: 'Type a shell command or query; an AI agent is here to help you.' }
+    { sender: 'system', text: 'Type a shell command or query; an AI assistant is here to help you.' }
   ]);
   const [status, setStatus] = useState<Status>({ type: '', msg: '' });
   const [loading, setLoading] = useState(false);

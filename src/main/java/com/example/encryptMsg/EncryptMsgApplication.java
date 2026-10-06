@@ -9,15 +9,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class EncryptMsgApplication {
 
 	public static void main(String[] args) {
-		SpringApplication app = new SpringApplication(EncryptMsgApplication.class);
-		String mode = System.getenv().getOrDefault("APP_MODE", "api");
-		if ("worker".equalsIgnoreCase(mode)) {
-			app.setWebApplicationType(WebApplicationType.NONE);
-			app.setAdditionalProfiles("worker");
-		}
-		app.run(args);
-		if (!"worker".equalsIgnoreCase(mode)) {
-			LLM_InteractiveHoneypotService.warmUpLlm();
-		}
+		SpringApplication.run(EncryptMsgApplication.class, args);
 	}
 }

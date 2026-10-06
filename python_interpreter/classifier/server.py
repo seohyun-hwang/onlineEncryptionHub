@@ -59,7 +59,7 @@ def serve():
     honeypot_pb2_grpc.add_BotClassifierServicer_to_server(BotClassifierService(), server)
 
     # Listen on all interfaces on port 50051
-    server.add_insecure_port('[::]:50051')
+    server.add_insecure_port('0.0.0.0:50051')
     print("Python gRPC Bot Classifier started on port 50051...")
 
     server.start()

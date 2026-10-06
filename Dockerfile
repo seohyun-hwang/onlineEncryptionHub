@@ -1,7 +1,7 @@
-FROM eclipse-temurin:24-jdk-alpine
+FROM eclipse-temurin:24-jdk
 WORKDIR /app
 
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN addgroup --system spring && adduser --system --ingroup spring spring
 USER spring:spring
 
 COPY target/*.jar app.jar

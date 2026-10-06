@@ -16,5 +16,5 @@ message SessionTelemetry {
 
 message PredictionResult {
   bool is_bot = 1;
-  double bot_probability = 2;
+  float confidence = 2;
 }

@@ -18,7 +18,7 @@ Once all setup is completed, open the project root-directory terminal, then ente
 
 To shut down the project, enter `docker compose down`.
 
-Redis 7.x runs on `localhost:6379`.
+Redis 7.x runs on `localhost:6379`. gRPC runs on `localhost:50051`.
 
 To access the project frontend, enter the URL http://localhost:80/ in your preferred browser.
 
