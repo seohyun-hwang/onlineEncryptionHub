@@ -19,8 +19,8 @@ export default function App() {
   return (
     <div className="container">
       <header>
-        <h1>Online Encryption Hub</h1>
-        <p>Fullstack Cryptography Application</p>
+        <h1>Distributed Database Cryptography</h1>
+        <p>GitHub: <a href="https://github.com/seohyun-hwang/onlineEncryptionHub">github.com/seohyun-hwang/onlineEncryptionHub</a></p>
       </header>
       <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
         <button

@@ -14,7 +14,13 @@ public class CorsConfig implements WebMvcConfigurer {
         registry.addMapping("/api/**")
                 // Port 3000: Create-React-App default
                 // Port 5173: Vite default
-                .allowedOrigins("http://localhost:3000", "http://localhost:5173")
+                // Port 3000: Next.js default
+                .allowedOrigins(
+                        "http://localhost:3000",
+                        "http://localhost:5173",
+                        "http://localhost:3000",
+                        "https://online-encryption-hub.vercel.app/"
+                )
                 .allowedMethods("POST" /*, "GET", "PUT", "DELETE", "OPTIONS"*/)
                 .allowedHeaders("*")
                 .allowCredentials(true);
