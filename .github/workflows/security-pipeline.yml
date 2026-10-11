@@ -44,14 +44,11 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: maven build
-        run: mvn -B package --file pom.xml
-        env:
-          GRPC_CLASSIFIER_HOST: localhost
-
       - name: run all testcases
         env:
           MAVEN_OPTS: "--add-modules jdk.incubator.vector"
+          GRPC_CLASSIFIER_HOST: localhost
+          GRPC_CLASSIFIER_PORT: 50051
         run: mvn clean verify -DargLine="--add-modules jdk.incubator.vector"
 
       - name: verify Docker image-build
