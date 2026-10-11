@@ -53,9 +53,9 @@ The user password is encrypted using a one-way SHA-256 hashing algorithm.
 Passwords are salted and stretched using PBKDF2 (implements HMAC-SHA256).
 
 My core cryptographic algorithms (PBKDF2, SHA-256, AES-256-GCM) are ***fully custom-rolled*** with no use of cipher libraries.
-While custom-rolled cryptography is unprofessional, highly vulnerable to side-channel attacks, and doesn't take advantage of hardware optimizations, I believed it to be worth the practice. The code for all my custom cryptography is found in `src/main/java/com.example.encryptMsg/cryptography/EncryptionCustom.java`.
+While custom-rolled cryptography is unprofessional, highly vulnerable to side-channel attacks, and doesn't take advantage of hardware optimizations, I believed it to be worth the practice. The code for all my custom cryptography is found in `src/main/java/com.example.encryptMsg/cryptography/Encryption_CustomRolled.java`.
 
-As already mentioned at the top, I therefore added a fully library-based version of the cryptography in `cryptography/EncryptionCompliant.java`.
+As already mentioned at the top, I therefore added a fully library-based version of the cryptography in `cryptography/Encryption_LibraryReliant.java`.
 
 Additional protection implemented against:
 1. Timing attacks 
@@ -105,7 +105,7 @@ Key plugins: Maven Compiler Plugin, Maven Surefire Plugin, Eirslett Frontend Mav
 TypeScript 6.0.2, React 19.2.8, Vite 8.2.2, Node.js, Next.js
 
 ### Cloud deployment tools
-Vercel (frontend deployment), Oracle Cloud Infrastructure (backend deployment), Cloudflare (secure frontend-backend communication)
+AWS E2 (backend deployment), AWS Amplify (frontend deployment)
 
 ### NIST documentation
 I did my best to design my SHA-256 and AES-256 algorithms in a manner that is faithful to the official documentation by the National Institute of Standards and Technology (NIST).
