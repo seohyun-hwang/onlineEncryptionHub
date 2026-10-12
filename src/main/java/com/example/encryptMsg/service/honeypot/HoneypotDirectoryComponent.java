@@ -1,4 +1,4 @@
-package com.example.encryptMsg.service;
+package com.example.encryptMsg.service.honeypot;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;

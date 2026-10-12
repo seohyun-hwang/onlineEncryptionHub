@@ -1,4 +1,4 @@
-package com.example.encryptMsg.service;
+package com.example.encryptMsg.service.honeypot;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

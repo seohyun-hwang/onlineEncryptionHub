@@ -1,6 +1,6 @@
 package com.example.encryptMsg.controller;
 
-import com.example.encryptMsg.service.LLM_InteractiveHoneypotService;
+import com.example.encryptMsg.service.honeypot.LLM_InteractiveHoneypotService;
 import com.example.encryptMsg.service.TelemetryService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Profile;

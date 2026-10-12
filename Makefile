@@ -2,17 +2,15 @@
 
 k8s-start:
 	@echo "Starting Minikube cluster..."
-	minikube start --container-runtime=docker
+	minikube start --container-runtime=docker --memory=4096 --cpus=2
 
 k8s-deploy: k8s-start
+	@echo "Packaging latest Java application JAR..."
+	mvn package -DskipTests
 	@echo "Building Docker image directly inside Minikube..."
 	minikube image build -t online-encryption-hub:latest .
 	@echo "Applying Kubernetes manifests..."
-	kubectl apply -f k8s/config.yml
-	kubectl apply -f k8s/redis.yml
-	kubectl apply -f k8s/postgres.yml
-	kubectl apply -f k8s/deployment.yml
-	kubectl apply -f k8s/worker-statefulset.yml
+	kubectl apply -f k8s/
 	kubectl get pods -w
 
 k8s-stop:
