@@ -87,6 +87,14 @@ jobs:
           echo "Waiting for databases to be ready..."
           kubectl wait --for=condition=ready pod -l app=postgres --timeout=90s
           kubectl wait --for=condition=ready pod -l app=redis --timeout=60s
+          
           echo "Waiting for application pods to be ready..."
-          kubectl wait --for=condition=ready pod -l app=encryption-api --timeout=120s
+          if ! kubectl wait --for=condition=ready pod -l app=encryption-api --timeout=180s; then
+            echo "❌ Encryption API failed to become ready in time. Printing diagnostics:"
+            kubectl get pods -o wide
+            kubectl describe pod -l app=encryption-api
+            kubectl logs -l app=encryption-api --tail=100
+            exit 1
+          fi
+          
           kubectl get pods -o wide
