@@ -48,8 +48,13 @@ jobs:
       - name: run all testcases
         env:
           MAVEN_OPTS: "--add-modules jdk.incubator.vector"
-          GRPC_CLASSIFIER_HOST: localhost
-          GRPC_CLASSIFIER_PORT: 50051
+          SPRING_DATASOURCE_URL: "jdbc:postgresql://localhost:5432/encryptdb"
+          SPRING_DATASOURCE_USERNAME: "postgres"
+          SPRING_DATASOURCE_PASSWORD: "password"
+          REDIS_HOST: "localhost"
+          REDIS_PORT: "6379"
+          GRPC_CLASSIFIER_HOST: "localhost"
+          GRPC_CLASSIFIER_PORT: "50051"
         run: mvn clean verify -DargLine="--add-modules jdk.incubator.vector"
 
       - name: verify Docker image-build
