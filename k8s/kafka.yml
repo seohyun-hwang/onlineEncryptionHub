@@ -30,9 +30,10 @@ spec:
             - --kafka-addr
             - PLAINTEXT://0.0.0.0:9092
             - --advertise-kafka-addr
-            - PLAINTEXT://kafka-service:9092
+            - PLAINTEXT://100.120.161.111:9092
           ports:
             - containerPort: 9092
+              hostPort: 9092
           resources:
             limits:
               memory: "384Mi"
