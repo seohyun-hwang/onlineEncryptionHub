@@ -5,6 +5,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import java.time.Instant;
 import java.util.*;
@@ -22,7 +23,14 @@ public class TaskScheduleService { // Redis-based task scheduler
             @Value("${REDIS_HOST:localhost}") String redisHost,
             @Value("${REDIS_PORT:6379}") int redisPort,
             @Value("${APP_MODE:api}") String appMode) {
-        this.pool = new JedisPool(redisHost, redisPort);
+
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        poolConfig.setMaxTotal(32);
+        poolConfig.setMaxIdle(16);
+        poolConfig.setMinIdle(4);
+        poolConfig.setTestOnBorrow(true);
+
+        this.pool = new JedisPool(poolConfig, redisHost, redisPort, 2000);
         this.appMode = appMode;
     }
 
