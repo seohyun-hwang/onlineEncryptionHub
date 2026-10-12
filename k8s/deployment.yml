@@ -19,7 +19,7 @@ spec:
       containers:
         - name: api
           image: online-encryption-hub:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Never
           env:
             - name: APP_MODE
               value: "api"

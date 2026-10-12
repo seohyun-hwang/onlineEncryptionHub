@@ -23,7 +23,7 @@ spec:
       containers:
         - name: worker
           image: online-encryption-hub:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Never
           env:
             - name: APP_MODE
               value: "worker"
