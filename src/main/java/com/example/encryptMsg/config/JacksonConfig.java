@@ -10,7 +10,7 @@ import java.io.IOException;
 /*  String literals are not cleared as readily by Java's garbage collector;
     sensitive payloads should thus be parsed into char-arrays ASAP.
  */
-public class CharArrDeserialization extends JsonDeserializer<char[]> {
+public class JacksonConfig extends JsonDeserializer<char[]> {
     @Override
     public char[] deserialize(JsonParser parser, DeserializationContext context) throws IOException {
         char[] textBuffer = parser.getTextCharacters();

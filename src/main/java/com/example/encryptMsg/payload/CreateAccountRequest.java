@@ -1,6 +1,6 @@
 package com.example.encryptMsg.payload;
 
-import com.example.encryptMsg.config.CharArrDeserialization;
+import com.example.encryptMsg.config.JacksonConfig;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -12,7 +12,7 @@ public class CreateAccountRequest {
     private String username;
     @NotNull(message = "Password must not be null")
     @Size(min = 1, message = "Password must not be empty")
-    @JsonDeserialize(using = CharArrDeserialization.class)
+    @JsonDeserialize(using = JacksonConfig.class)
     private char[] password;
     @NotBlank
     private String ciphermode;

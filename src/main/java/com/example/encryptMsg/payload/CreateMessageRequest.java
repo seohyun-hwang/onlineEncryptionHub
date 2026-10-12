@@ -1,6 +1,6 @@
 package com.example.encryptMsg.payload;
 
-import com.example.encryptMsg.config.CharArrDeserialization;
+import com.example.encryptMsg.config.JacksonConfig;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +14,7 @@ public class CreateMessageRequest {
     private char[] messagePlaintext;
     @NotNull(message = "Password must not be null")
     @Size(min = 1, message = "Password must not be empty")
-    @JsonDeserialize(using = CharArrDeserialization.class)
+    @JsonDeserialize(using = JacksonConfig.class)
     private char[] password;
 
     public CreateMessageRequest() {
