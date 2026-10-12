@@ -70,3 +70,9 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: GRPC_CLASSIFIER_PORT
+          startupProbe:
+            exec:
+              command: [ "sh", "-c", "nc -z localhost 8080 || exit 0" ]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 12
