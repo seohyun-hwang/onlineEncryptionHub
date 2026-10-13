@@ -6,7 +6,7 @@ data:
   REDIS_HOST: "redis-service"
   REDIS_PORT: "6379"
   SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-service:5432/encryptdb"
-  SPRING_DATASOURCE_USERNAME: "postgres"
+  SPRING_DATASOURCE_USERNAME: "sa"
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
   GRPC_CLASSIFIER_HOST: "localhost"
   GRPC_CLASSIFIER_PORT: "50051"
@@ -19,4 +19,4 @@ metadata:
   name: app-secrets
 type: Opaque
 stringData:
-  POSTGRES_PASSWORD: "pa"
+  POSTGRES_PASSWORD: ""
